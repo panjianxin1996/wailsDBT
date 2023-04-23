@@ -1,0 +1,12 @@
+.select_db_list {
+    width: 200px;
+    list-style: none;
+    .select_db_list_item {
+        cursor: pointer;
+        height: 30px;
+        line-height: 30px;
+        &:hover {
+            background-color: rgba(109, 201, 255, 0.363);
+        }
+    }
+}

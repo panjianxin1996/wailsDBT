@@ -1,0 +1,54 @@
+
+.db_table {
+    padding: 0 10px;
+    .tab_header {
+        padding: 10px 0;
+        .table_avatar {
+            border: 1px solid rgba(5, 5, 5, .2);
+            background: white;
+            padding: 8px;
+        }
+        .header_title {
+            margin-left: 20px;
+            .title_db_name {
+                font-weight: 500;
+                font-size: 18px;
+                padding: 5px 10px;
+            }
+            .title_table_name {
+                font-weight: 500;
+                margin-left: 15px;
+                font-size: 18px;
+            }
+        }
+    }
+    
+    .tab_box {
+        // background-color: pink;
+        // 重写Tabs组件与内容margin
+        .ant-tabs-nav {
+            margin: 0;
+        }
+        
+    }
+    .sql_editor {
+        width: 100%;
+        height: 120px;
+    } 
+    .table_footer {
+        // background-color: pink;
+        width: 100%;
+        height: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: fixed;
+        bottom: 0;
+        .query_SQL_box {
+            height: 30px;
+            line-height: 30px;
+            // background-color: blue;
+            border-top: 1px solid rgba(5, 5, 5, .2);
+        }
+    }
+}

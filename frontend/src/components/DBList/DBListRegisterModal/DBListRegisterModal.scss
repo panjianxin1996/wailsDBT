@@ -1,0 +1,32 @@
+.modal_box {
+    // background-color: pink;
+    border-radius: 15px;
+    .ant-modal-content {
+        padding: 0;
+        height: 550px;
+    }
+    .modal_img_box {
+        height: 550px; 
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        background-image: linear-gradient(285deg, rgb(98, 71, 255), rgb(95, 178, 255))
+    }
+    .modal_form {
+        padding: 50px 40px;
+        .logo_box {
+            margin-bottom: 15px;
+            font-size: 25px;
+            margin-right: 25px;
+            .logo_txt {
+                margin-left: 10px;
+                font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+            }
+        }
+        .tips_txt {
+            font-size: 12px;
+            margin-bottom: 10px;
+            color: #888;
+        }
+    }
+    
+}
