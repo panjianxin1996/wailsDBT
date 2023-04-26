@@ -30,6 +30,7 @@ const (
 	GET_CURRENT_TABLES
 	CUSTOM_SQL
 	EXEC_SQL
+	EXEC_AND_SELECT_SQL
 )
 
 // 连接数据库
@@ -77,6 +78,8 @@ func Operation(db *sql.DB, operateDataJson string) interface{} {
 		return getTableData(db, operateData.CustomSQL)
 	case EXEC_SQL:
 		return getExecData(db, operateData.ExecSQL)
+	case EXEC_AND_SELECT_SQL:
+		return getExecAndSelectData(db, operateData.ExecSQL, operateData.CustomSQL)
 	default:
 		return true
 	}
@@ -92,7 +95,7 @@ func queryData(db *sql.DB, querySQL string) string {
 	rowsList := make([]interface{}, len(cols))      // 全部数据的列表
 	resultList := make([]map[string]interface{}, 0) // 设置可增长的全部数据
 
-	for i, _ := range cols {
+	for i := range cols {
 		var ii interface{}
 		rowsList[i] = &ii
 	}
@@ -123,9 +126,9 @@ func queryData(db *sql.DB, querySQL string) string {
 }
 
 // 通用操作
-func execData(db *sql.DB, querySQL string) string {
+func execData(db *sql.DB, execSQL string) string {
 	backJSON := make(map[string]interface{})
-	ret, err := db.Exec(querySQL)
+	ret, err := db.Exec(execSQL)
 	if err != nil {
 		backJSON["code"] = -1
 		backJSON["errorMsg"] = err.Error()
@@ -143,6 +146,26 @@ func execData(db *sql.DB, querySQL string) string {
 	return string(bytes)
 }
 
+// 操作并查询
+func execAndQueryData(db *sql.DB, execSQL string, querySQL string) string {
+	backJSON := make(map[string]interface{})
+	ret, err := db.Exec(execSQL)
+	if err != nil {
+		backJSON["code"] = -1
+		backJSON["errorMsg"] = err.Error()
+	} else {
+		backJSON["code"] = 1
+		insertId, _ := ret.LastInsertId()
+
+		backJSON["insertId"] = insertId
+		affectCount, _ := ret.RowsAffected()
+
+		backJSON["affectCount"] = affectCount
+	}
+	jsonBytes, _ := json.Marshal(backJSON)
+	return string(jsonBytes)
+}
+
 func getAllDataBase(db *sql.DB) string {
 	// db.Query()
 	return queryData(db, "SHOW DATABASES")
@@ -158,4 +181,8 @@ func getTableData(db *sql.DB, customSQL string) string {
 
 func getExecData(db *sql.DB, execSQL string) string {
 	return execData(db, execSQL)
+}
+
+func getExecAndSelectData(db *sql.DB, customSQL string, execSQL string) string {
+	return execAndQueryData(db, execSQL, customSQL)
 }

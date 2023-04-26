@@ -22,7 +22,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     const initalState: DBTable.State = {
         tableStack: [],
         activeTableIndex: 0,
-        tableListKeyIndex: 0,
+        // tableListKeyIndex: 0,
         activeTableKey: '',
         activeTableData: {},
         tableColumns: [],
@@ -32,22 +32,16 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
             showFlag: false
         },
         messageList: [],
-        rightClickMenuBar: {
-            showMenu: false,
-            X: 0,
-            Y: 0
-        },
-        showRightMenu: false,
     }
 
-    const [state, setState] = useReducer(dbReducer, initalState)
+    const [state, setState] = useReducer(dbReducer, initalState);
     const [activeRowForm] = Form.useForm();
     const [messageApi, messageContextHolder] = message.useMessage();
     const [notificationApi, notificationContextHolder] = notification.useNotification();
 
     useImperativeHandle(
         ref,
-        () => ({ createTable, state })
+        () => ({ CreateTable, state })
     )
 
     /**
@@ -58,7 +52,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
      * @param querySQLStr 自定义sql语句
      * @returns 
      */
-    function createTable(dbName: string, tableName: string, newQuerySQL: boolean = false, querySQLStr: string) {
+    function CreateTable(dbName: string, tableName: string, newQuerySQL: boolean = false, querySQLStr: string) {
         if (!dbName || !tableName) {
             return
         }
@@ -127,10 +121,8 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     }
                 }
             })
-            let tmpTableListKeyIndex = 0
             // 给table数据设置key值
             const tableData = tableDataSource.map((item: any, index: number) => {
-                tmpTableListKeyIndex = index
                 return { ...item, key: index }
             })
 
@@ -163,8 +155,6 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     ],
                     // 更新表格索引
                     activeTableIndex: state.activeTableIndex + 1,
-                    // 更新表格数据索引
-                    tableListKeyIndex: tmpTableListKeyIndex + 1,
                     // // 更新选中表格索引
                     activeTableKey,
                     // 更新当前表格头部内容
@@ -184,9 +174,58 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     }
 
     /**
-     * useReducer dispath
-     * @param state 
-     * @param action 
+     * 更新栈内指定选中key的表数据 使用直接通过querySQL重新查询数据并更新到指定key的栈中
+     * @param needUpdateKey 需要更新的表栈
+     * @returns void
+     */
+    function updateStackTableData(needUpdateKey: string) :void {
+        // 查询出制定key的栈中数据
+        let updateStackKeyHandle = state.tableStack.find(item => {
+            return item.key === needUpdateKey
+        })
+        // 创建指令请求对象
+        let reqData: RequestGo.RequestGoData[] = [
+            {
+                operType: operationTypes.DB_OPERATION,
+                connDBId,
+                data: {
+                    type: dbOperationTypes.CUSTOM_SQL,
+                    customSQL: updateStackKeyHandle?.QuerySQL
+                }
+            },
+        ]
+        requestGoCommon(reqData).then(responseList => {
+            const [ tableResData ] = responseList
+            // 给数据指定key值
+            const tableData = tableResData.map((item: any, index: number) => {
+                return { ...item, key: index }
+            })
+            // 修改合并数据
+            const renewTableStack = state.tableStack.map(item=>{
+                if (item.key === needUpdateKey) {
+                    return {
+                        ...item,
+                        tableDataSource: tableResData,
+                        tableData
+                    }
+                } else {
+                    return item;
+                }
+            })
+            // 更新数据
+            setState({
+                type: 'updateTableData',
+                payload: {
+                    tableStack: renewTableStack
+                }
+            })
+        })
+    }
+
+    /**
+     * useReducer dispath集合 主要涉及state里面内容的操作，包括增删改
+     * @param state 源数据
+     * @param action 操作以及数据
      * @returns DBTable.State
      */
     function dbReducer(state: DBTable.State, action: DBTable.DBReducerAction): DBTable.State {
@@ -199,8 +238,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     tableStack: action.payload.tableStack,
                     activeTableIndex: action.payload.activeTableIndex,
                     activeTableKey: action.payload.activeTableKey,
-                    activeTableData: action.payload.activeTableData,
-                    tableListKeyIndex: action.payload.tableListKeyIndex
+                    activeTableData: action.payload.activeTableData
                 }
             case "switchActiveTableKey":
                 return {
@@ -217,11 +255,6 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     ...state,
                     activeTableData: action.payload.activeTableData
                 }
-            case "changeShowRightMenu":
-                return {
-                    ...state,
-                    rightClickMenuBar: action.payload.rightClickMenuBar
-                }
             case "changeModalView":
                 return {
                     ...state,
@@ -232,11 +265,11 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     ...state,
                     tableStack: action.payload.tableStack
                 }
-            case "updateTableListKeyIndex":
-                return {
-                    ...state,
-                    tableListKeyIndex: action.payload.tableListKeyIndex
-                }
+            // case "updateTableListKeyIndex":
+            //     return {
+            //         ...state,
+            //         tableListKeyIndex: action.payload.tableListKeyIndex
+            //     }
             case "updateMessageList":
                 return {
                     ...state,
@@ -248,10 +281,11 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     }
 
     /**
-     * tabs切换
+     * tabs切换事件，切换之后需要修改切换key和选中tab的数据，例如库名、表名、表主键集
      * @param tabKey 
+     * @returns void
      */
-    function onTabChange(tabKey: string) {
+    function onTabChange(tabKey: string):void {
         // 更新选中tab名
         setState({
             type: 'switchActiveTableKey',
@@ -275,11 +309,12 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     }
 
     /**
-     * 操作tabs 目前只要操作删除
+     * 操作tabs事件,目前只有操作删除
      * @param targetKey 
      * @param action 
+     * @returns void
      */
-    function onTabEdit(targetKey: any, action: any) {
+    function onTabEdit(targetKey: any, action: any):void {
         const newTableStack = state.tableStack.filter((item: DBTable.TableStack) => {
             return item.key !== targetKey
         })
@@ -299,7 +334,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
 
     /**
      * 获取当前选中tab框的handle
-     * @returns 
+     * @returns DBTable.TableStack
      */
     function getActiveTabHandle(): DBTable.TableStack | undefined {
         return state.tableStack.find(item => {
@@ -310,8 +345,9 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     /**
      * 选中表格当前行操作
      * @param rowIds 
+     * @returns void
      */
-    function activeCurrentRow(rowIds: React.Key[], rowData: DBTable.TableDataItem) {
+    function activeCurrentRow(rowIds: React.Key[], rowData: DBTable.TableDataItem):void {
         let activeRowData = rowData
         // console.log(activeRowData)
         let newTableStack = state.tableStack.map(item => {
@@ -333,6 +369,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         })
     }
 
+    // !废弃 2023-4-26
     function activeCurrentRowHandle() {
         let tabHandle = getActiveTabHandle()
         console.log(tabHandle?.tableData.find(item => {
@@ -343,7 +380,11 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         }) || {}
     }
 
-    function editRecordBtnEvent() {
+    /**
+     * 编辑一行按钮事件
+     * @returns void
+     */
+    function editRecordBtnEvent():void {
         if (getActiveTabHandle()?.activeRowIndex.length === 0) {
             notificationApi.warning({
                 message: `请选择一行需要修改的记录`,
@@ -354,22 +395,33 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
             return
         }
         activeRowForm.setFieldsValue(getActiveTabHandle()?.activeRowData)
-        setState({
-            type: 'changeModalView',
-            payload: {
-                modalView: { type: 'edit', showFlag: true }
-            }
-        })
+        toggleModalViewEvent('edit')
     }
 
+    /**
+     * 添加一行按钮事件
+     */
     function addRecordBtnEvent() {
         activeRowForm.resetFields()
-        setState({
-            type: 'changeModalView',
-            payload: {
-                modalView: { type: 'add', showFlag: true }
-            }
-        })
+        toggleModalViewEvent('add')
+    }
+
+    /**
+     * 可显示或隐式关闭modal框
+     */
+    function toggleModalViewEvent (type?: string) {
+        let modalView = {
+            type: type? type: state.modalView.type,
+            showFlag: !state.modalView.showFlag
+        }
+        setState({ type: 'changeModalView', payload: { modalView } })
+    }
+
+    /**
+     * 刷新当前数据表内容
+     */
+    function reloadCurrentTableBtnEvent () {
+        updateStackTableData(state.activeTableKey as string)
     }
 
     /**
@@ -416,85 +468,86 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         // console.log(tmpTableDataSource,tmpTableData)
     }
 
-    function addTableData(dbData: { formData?: any; insertId: any; dbName: any; tableName: any; PRILIST: any }) {
-        const { tableDataSource, tableData } = getActiveTabHandle() || {}
-        /**
-         * 没有插入id意思是数据库表中没有主键或者主键没有设置自增 这里就需要判断为静默插入成功 并直接将前端数据插入表中
-         */
-        if (dbData.insertId === 0) {
-            let tmpTableDataSource = tableDataSource?.concat(dbData.formData)
-            let tmpTableData = tableData?.concat({ key: state.tableListKeyIndex, ...dbData.formData })
-            let tmpTableStack = state.tableStack.map(item => {
-                if (item.key === state.activeTableKey) {
-                    return {
-                        ...item,
-                        tableDataSource: tmpTableDataSource,
-                        tableData: tmpTableData,
-                        // activeRowData: formData 新增不需要设置更新选中行数据
-                    }
-                } else {
-                    return item
-                }
+    // !废弃 2023-4-26
+    // function addTableData(dbData: { formData?: any; insertId: any; dbName: any; tableName: any; PRILIST: any }) {
+    //     const { tableDataSource, tableData } = getActiveTabHandle() || {}
+    //     /**
+    //      * 没有插入id意思是数据库表中没有主键或者主键没有设置自增 这里就需要判断为静默插入成功 并直接将前端数据插入表中
+    //      */
+    //     if (dbData.insertId === 0) {
+    //         let tmpTableDataSource = tableDataSource?.concat(dbData.formData)
+    //         let tmpTableData = tableData?.concat({ key: state.tableListKeyIndex, ...dbData.formData })
+    //         let tmpTableStack = state.tableStack.map(item => {
+    //             if (item.key === state.activeTableKey) {
+    //                 return {
+    //                     ...item,
+    //                     tableDataSource: tmpTableDataSource,
+    //                     tableData: tmpTableData,
+    //                     // activeRowData: formData 新增不需要设置更新选中行数据
+    //                 }
+    //             } else {
+    //                 return item
+    //             }
     
-            })
-            setState({
-                type: 'updateTableData',
-                payload: {
-                    tableStack: tmpTableStack
-                }
-            })
-        } else {
-            /**
-             * 需要重新请求数据库内容 因为有可能主键等内容没有输入 数据库会按照默认值自动生成 此处并不知道默认值为什么所以需要重新请求数据库获取新增一行的内容
-             */
-            const QuerySQL = `SELECT * FROM ${dbData.dbName}.${dbData.tableName} WHERE ${dbData.PRILIST.join(' AND ')}`
-            console.log(QuerySQL)
-            let reqData: RequestGo.RequestGoData[] = [
-                {
-                    operType: operationTypes.DB_OPERATION,
-                    connDBId,
-                    data: {
-                        type: dbOperationTypes.CUSTOM_SQL,
-                        customSQL: QuerySQL
-                    }
-                },
-            ]
-            requestGoCommon(reqData).then(responseList => {
-                const [insertRowList] = responseList
-                const insertRowData = insertRowList[0]
-                let tmpTableDataSource = tableDataSource?.concat(insertRowData)
-                let tmpTableData = tableData?.concat({ key: state.tableListKeyIndex, ...insertRowData })
-                // 更新栈中激活选中表的数据
-                let tmpTableStack = state.tableStack.map(item => {
-                    if (item.key === state.activeTableKey) {
-                        return {
-                            ...item,
-                            tableDataSource: tmpTableDataSource,
-                            tableData: tmpTableData
-                            // activeRowData: insertRowData 新增不需要设置更新选中行数据
-                        }
-                    } else {
-                        return item
-                    }
+    //         })
+    //         setState({
+    //             type: 'updateTableData',
+    //             payload: {
+    //                 tableStack: tmpTableStack
+    //             }
+    //         })
+    //     } else {
+    //         /**
+    //          * 需要重新请求数据库内容 因为有可能主键等内容没有输入 数据库会按照默认值自动生成 此处并不知道默认值为什么所以需要重新请求数据库获取新增一行的内容
+    //          */
+    //         const QuerySQL = `SELECT * FROM ${dbData.dbName}.${dbData.tableName} WHERE ${dbData.PRILIST.join(' AND ')}`
+    //         console.log(QuerySQL)
+    //         let reqData: RequestGo.RequestGoData[] = [
+    //             {
+    //                 operType: operationTypes.DB_OPERATION,
+    //                 connDBId,
+    //                 data: {
+    //                     type: dbOperationTypes.CUSTOM_SQL,
+    //                     customSQL: QuerySQL
+    //                 }
+    //             },
+    //         ]
+    //         requestGoCommon(reqData).then(responseList => {
+    //             const [insertRowList] = responseList
+    //             const insertRowData = insertRowList[0]
+    //             let tmpTableDataSource = tableDataSource?.concat(insertRowData)
+    //             let tmpTableData = tableData?.concat({ key: state.tableListKeyIndex, ...insertRowData })
+    //             // 更新栈中激活选中表的数据
+    //             let tmpTableStack = state.tableStack.map(item => {
+    //                 if (item.key === state.activeTableKey) {
+    //                     return {
+    //                         ...item,
+    //                         tableDataSource: tmpTableDataSource,
+    //                         tableData: tmpTableData
+    //                         // activeRowData: insertRowData 新增不需要设置更新选中行数据
+    //                     }
+    //                 } else {
+    //                     return item
+    //                 }
 
-                })
-                setState({
-                    type: 'updateTableData',
-                    payload: {
-                        tableStack: tmpTableStack
-                    }
-                })
-                setState({
-                    type: 'updateTableListKeyIndex',
-                    payload: {
-                        tableListKeyIndex: state.tableListKeyIndex + 1
-                    }
-                })
-            })
-        }
+    //             })
+    //             setState({
+    //                 type: 'updateTableData',
+    //                 payload: {
+    //                     tableStack: tmpTableStack
+    //                 }
+    //             })
+    //             setState({
+    //                 type: 'updateTableListKeyIndex',
+    //                 payload: {
+    //                     tableListKeyIndex: state.tableListKeyIndex + 1
+    //                 }
+    //             })
+    //         })
+    //     }
 
 
-    }
+    // }
 
     /**
      * 弹框修改确认事件
@@ -519,7 +572,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         // 获取主键和旧主键数据
         // const PRI = state.activeTableData.primaryKeyName
         // const PRIValue = PRI && getActiveTabHandle()?.activeRowData[PRI]
-        // 获取主键名和主键内容拼接
+        // 获取主键名和主键内容拼接 多主键问题
         const PRILIST = state.activeTableData.primaryKeyName?.map((item:any)=>{
             return `${item.Field}='${getActiveTabHandle()?.activeRowData[item.Field]}'`
         })
@@ -539,7 +592,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
 
         requestGoCommon(reqData).then(responseList => {
             const [backData] = responseList
-            console.log(backData)
+            // console.log(backData)
             if (backData.code === 1) {
                 addMessage({
                     type: 'success',
@@ -572,16 +625,14 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         const PRILIST = state.activeTableData.primaryKeyName?.map((item:any)=>{
             return `${item.Field}='${getActiveTabHandle()?.activeRowData[item.Field]}'`
         })
-        console.log(PRILIST)
-
-        console.log(formData)
+        // console.log(PRILIST)
+        // console.log(formData)
         // console.log(Object.keys(formData))
         const tableKeys = Object.keys(formData).join(',')
         const tableRowData = Object.values(formData).map(item => {
             return item === undefined ? 'null' : `'${item}'`
         }).join(',')
-        console.log(Object.values(formData))
-
+        // console.log(Object.values(formData))
         const insertSQL = `INSERT INTO ${dbName}.${tableName} (${tableKeys}) VALUES (${tableRowData});`
         console.log(insertSQL)
         let reqData: RequestGo.RequestGoData[] = [{
@@ -594,16 +645,16 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         }]
         requestGoCommon(reqData).then(responseList => {
             const [backData] = responseList
-            console.log(backData)
+            // console.log(backData)
             if (backData.code === 1) {
                 addMessage({
                     type: 'success',
                     content: `记录修改成功！影响行数${backData.affectCount}`,
                 })
                 console.log(backData)
+                updateStackTableData(state.activeTableKey as string)
                 // 更新表格
                 // addTableData({ formData, insertId: backData.insertId, dbName, tableName, PRILIST:backData.insertId })
-                setState({ type: 'changeModalView', payload: { modalView: { ...state.modalView, showFlag: false } } })
             } else {
                 addMessage({
                     type: 'error',
@@ -615,7 +666,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     }
 
     /**
-     * 新增消息到消息列表中并弹出消息框
+     * 封装管理新增消息到消息列表中并弹出消息框
      * @param addMessageData 
      */
     function addMessage(addMessageData: DBTable.MessageList) {
@@ -648,10 +699,9 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 footer={false}
                 // style={{height: "500px",overflow: "auto" }}
                 open={state.modalView?.showFlag}
-                onCancel={() => setState({ type: 'changeModalView', payload: { modalView: { ...state.modalView, showFlag: false } } })}
+                onCancel={() => {toggleModalViewEvent()}}
             >
                 <div style={{ height: '400px', overflow: "auto" }}>
-
                     <Form
                         form={activeRowForm}
                         // layout="vertical"
@@ -661,21 +711,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                         onFinish={onFormFinish}
                     // initialValues={getActiveTabHandle()?.activeRowData}
                     >
-                        {/* <p>{JSON.stringify(getActiveTabHandle()?.activeRowData)}</p> */}
                         {
-                            // getActiveTabHandle()?.activeRowData.map((item: any, index: number) => {
-                            //     // console.log(item);
-                            //     return <Form.Item
-                            //         name={item.label}
-                            //         label={item.label}
-                            //         key={"form_item_" + index.toString()}
-                            //     // rules={[{ required: true, message: 'Please input the title of collection!' }]}
-                            //     >
-                            //         <Input value={item.value}/>
-                            //         {/* <span>{item.value}</span> */}
-                            //     </Form.Item>
-                            // })
-
                             getActiveTabHandle()?.tableColumns.map((item: any, index: number) => {
                                 // console.log(item);
                                 return <Form.Item
@@ -692,12 +728,9 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                                 </Form.Item>
                             })
                         }
-                        {/* <Form.Item> */}
                         <Button shape="round" block={true} type="primary" htmlType="submit">{state.modalView.type === 'edit' ? '修改' : '新增'}</Button>
-                        {/* </Form.Item> */}
                     </Form>
                 </div>
-
             </Modal>
             <Row className='tab_header' align='middle'>
                 <Col span={16}>
@@ -719,6 +752,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     <Button>编辑表结构</Button>
                 </Col>
             </Row>
+            {/* 表标签页 */}
             <Tabs
                 className='tab_box'
                 hideAdd
@@ -727,6 +761,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 activeKey={state.activeTableKey}
                 onEdit={onTabEdit}
                 items={state.tableStack} />
+            {/* 表格和输入框 当为自定义输入内容时才展示输入框 */}
             <div>
                 {
                     getActiveTabHandle()?.newQuerySQL && <div className='sql_editor'>
@@ -740,10 +775,10 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 <Table
                     key={state.activeTableKey}
                     pagination={{
-                        pageSize: 100
+                        pageSize: 100 // 设置表最多展示100行
                     }}
-                    rowSelection={{
-                        hideSelectAll: true,
+                    rowSelection={{ // 展示表前选择框
+                        hideSelectAll: true, 
                         type: 'radio',
                         fixed: true,
                         selectedRowKeys: getActiveTabHandle()?.activeRowIndex,
@@ -752,19 +787,15 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                         },
                         // onSelect: (record, selected, selectedRows, nativeEvent) =>{console.log(record, selected, selectedRows, nativeEvent)}
                     }}
-                    onRow={(record) => {
+                    onRow={(record) => { 
                         return {
-                            onClick: (event) => {
+                            onClick: (event) => { // 给每一行的数据进行绑定去修改选中内容 方便进行数据操作
                                 activeCurrentRow([record.key], record)
                             },
-                            //   onDoubleClick: (event) => {},
-                            // onContextMenu: (event) => {
-                            //     event.preventDefault()
-                            //     console.log('onContextMenu', event)
-                            //     setState({ type: 'changeShowRightMenu', payload: { rightClickMenuBar: { showMenu: true, X: event.pageX, Y: event.pageY } } })
-                            // },
-                            //   onMouseEnter: (event) => {}, // 鼠标移入行
-                            //   onMouseLeave: (event) => {},
+                            //  onDoubleClick: (event) => {},
+                            //  onContextMenu: (event) => {},
+                            //  onMouseEnter: (event) => {}, // 鼠标移入行
+                            //  onMouseLeave: (event) => {},
                         };
                     }}
                     scroll={{ x: 'max-content', y: 300 }}
@@ -773,15 +804,14 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     columns={getActiveTabHandle()?.tableColumns}
                     dataSource={getActiveTabHandle()?.tableData} />
             </div>
-
-            {/* <p>{JSON.stringify(state.tableStack?.find(item=>{return item.key === state.activeTableKey})?.activeRowIndex)}</p> */}
+            {/* 底部操作栏 */}
             <div className='table_footer'>
                 <div className='operation_box'>
                     <Space wrap>
                         <Button type="primary" shape="round" icon={<EditOutlined />} size='small' onClick={editRecordBtnEvent}>修改记录</Button>
                         <Button type="primary" shape="round" icon={<PlusCircleOutlined />} size='small' onClick={addRecordBtnEvent}>新增记录</Button>
                         <Button type="primary" shape="round" icon={<MinusCircleOutlined />} size='small'>删除记录</Button>
-                        <Button type="primary" shape="round" icon={<RedoOutlined />} size='small'>刷新</Button>
+                        <Button type="primary" shape="round" icon={<RedoOutlined />} size='small' onClick={reloadCurrentTableBtnEvent}>刷新</Button>
                     </Space>
                 </div>
                 <div className='query_SQL_box'>{getActiveTabHandle()?.QuerySQL}</div>

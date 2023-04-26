@@ -159,7 +159,7 @@ function Home() {
         // console.log(item)
         setActiveDBtable(item.key)
         const [dbName, tableName] = item.key.split('/')
-        ShowDBTableRef.current && ShowDBTableRef.current.createTable(dbName, tableName)
+        ShowDBTableRef.current && ShowDBTableRef.current.CreateTable(dbName, tableName)
     }
 
     return (
@@ -188,7 +188,8 @@ function Home() {
                         <Menu
                             className='sider_menu_box'
                             mode="inline"
-                            onSelect={onMenuSelect}
+                            // onSelect={onMenuSelect}
+                            onClick={onMenuSelect}
                             // style={{ height: "500px",overflow: 'scroll' }}
                             items={databaseMenu}
                         />

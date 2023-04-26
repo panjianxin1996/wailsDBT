@@ -10,15 +10,13 @@ export namespace DBTable {
     interface State {
         tableStack: TableStack[]; // 表格栈
         activeTableIndex: number; // 当前索引自增
-        tableListKeyIndex: number; // 数据库表索引
+        // tableListKeyIndex: number; // 数据库表索引 !废弃 2023-4-26
         activeTableKey?: string; // 选中table值
         activeTableData: ActiveTableData; // 选中的内容
         tableColumns: ColumnsType<TableDataItem>;
         tableData: TableDataItem[];
         modalView: ModalView;
         messageList: MessageList[], // 消息列表
-        showRightMenu: boolean;
-        rightClickMenuBar: RightClickMenuBar;
     }
 
     /**
@@ -38,7 +36,7 @@ export namespace DBTable {
         activeRowData: any; // 选中行内容
         tableStructureSQL?: string; // 查询表结构的SQL语句
         QuerySQL?: string; // 查询表内容的SQL语句
-        children?: ReactNode; // （废弃！）渲染tab下子节点 
+        children?: ReactNode; // （!废弃 2023-4-26）渲染tab下子节点 
     }
 
     /**
@@ -60,7 +58,7 @@ export namespace DBTable {
     }
 
     /**
-     * 废弃
+     * !废弃 2023-4-26
      */
     interface RightClickMenuBar {
         showMenu: boolean;
