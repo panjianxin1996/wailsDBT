@@ -32,7 +32,7 @@ export namespace DBTable {
         tableDataSource: TableDataItem[]; // 请求回来的原始表格数据
         tableColumns: ColumnsType<TableDataItem>; // 格式化后表格结构数据用于表格展示
         tableData: TableDataItem[]; // 格式化后表内容用于表格展示
-        activeRowIndex: string[] | number[], // 选中行索引
+        activeRowIndex: number[], // 选中行索引
         activeRowData: any; // 选中行内容
         tableStructureSQL?: string; // 查询表结构的SQL语句
         QuerySQL?: string; // 查询表内容的SQL语句
