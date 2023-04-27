@@ -8,21 +8,21 @@ export namespace DBTable {
         connDBId: string; // 连接的数据库句柄
     }
     interface State {
-        tableStack: TableStack[]; // 表格栈
+        tableObjectArray: tableObject[]; // 表格表对象数组
         activeTableIndex: number; // 当前索引自增
-        // tableListKeyIndex: number; // 数据库表索引 !废弃 2023-4-26
+        // tableListKeyIndex: number; // 数据库表索引 [!废弃] 2023-4-26
         activeTableKey?: string; // 选中table值
         activeTableData: ActiveTableData; // 选中的内容
-        tableColumns: ColumnsType<TableDataItem>;
-        tableData: TableDataItem[];
-        modalView: ModalView;
+        // tableColumns: ColumnsType<TableDataItem>; // 表格头数据 [!废弃] 2023-4-27
+        // tableData: TableDataItem[]; // 表格数据 [!废弃] 2023-4-27
+        modalView: ModalView; // 弹框信息 
         messageList: MessageList[], // 消息列表
     }
 
     /**
-     * 表格栈 用于存放数据库中表的属性和内容
+     * 表格表对象数组 用于存放数据库中表的属性和内容
      */
-    interface TableStack {
+    interface tableObject {
         key: string; // tab主要key值，用于判定tab 格式 tab_%number% 唯一
         label: string; 
         dbName: string; // 当前数据库名
@@ -36,29 +36,29 @@ export namespace DBTable {
         activeRowData: any; // 选中行内容
         tableStructureSQL?: string; // 查询表结构的SQL语句
         QuerySQL?: string; // 查询表内容的SQL语句
-        children?: ReactNode; // （!废弃 2023-4-26）渲染tab下子节点 
+        children?: ReactNode; // （[!废弃] 2023-4-26）渲染tab下子节点 
     }
 
     /**
      * 弹出框
      */
     interface ModalView {
-        type: string;
-        showFlag: boolean;
+        type: string; // 弹框类型
+        showFlag: boolean; // 弹框标识
     }
 
     /**
      * 消息列表框
      */
     interface MessageList {
-        key?: string;
-        content: string;
-        type: NoticeType;
-        duration?: number;
+        key?: string; // 消息key 唯一
+        content: string; // 消息内容
+        type: NoticeType; // 消息类型 基于antd message NoticeType = "info" | "success" | "error" | "warning" | "loading"
+        duration?: number; // 消息显示时间
     }
 
     /**
-     * !废弃 2023-4-26
+     * [!废弃] 2023-4-26
      */
     interface RightClickMenuBar {
         showMenu: boolean;
@@ -70,18 +70,18 @@ export namespace DBTable {
      * 选中
      */
     interface ActiveTableData {
-        dbName?: string;
-        tableName?: string;
-        primaryKeyName?: string[]; 
+        dbName?: string; // 库名
+        tableName?: string; // 表名
+        primaryKeyData?: string[]; // 存储数据表主键信息 可能有多个主键也有可能没有主键 需要操作者进行甄别，如果多个需要进行多个拼接，如果没有则需要进行sql整体判断
     }
 
     interface TableDataItem {
-        [content:string]: string;
+        [content:string]: string; // 表格数据可能为任意名称键和字符串值
     }
 
     interface DBReducerAction {
-        type: string;
-        payload: State | State.activeTableKey | State.tableStack;
+        type: string; // 操作类型
+        payload: State | State.activeTableKey | State.tableStack; // 将要更新的数据格式
     }
     
 }

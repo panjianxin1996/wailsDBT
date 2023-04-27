@@ -20,13 +20,13 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     const tableKeyword = 'tab_'
 
     const initalState: DBTable.State = {
-        tableStack: [],
+        tableObjectArray: [],
         activeTableIndex: 0,
         // tableListKeyIndex: 0,
         activeTableKey: '',
         activeTableData: {},
-        tableColumns: [],
-        tableData: [],
+        // tableColumns: [],
+        // tableData: [],
         modalView: {
             type: '',
             showFlag: false
@@ -50,26 +50,27 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
      * @param tableName 表名
      * @param newQuerySQL 是否自定义sql语句flag boolean
      * @param querySQLStr 自定义sql语句
-     * @returns 
+     * @returns void
      */
-    function CreateTable(dbName: string, tableName: string, newQuerySQL: boolean = false, querySQLStr: string) {
+    function CreateTable(dbName: string, tableName: string, newQuerySQL: boolean = false, querySQLStr: string):void {
         if (!dbName || !tableName) {
             return
         }
-        let checkIndex: number = state.tableStack.findIndex((item: any) => {
+        let checkIndex: number = state.tableObjectArray.findIndex((item: any) => {
             return (item.dbName === dbName && item.tableName === tableName)
         })
-        checkIndex === -1 ? initTable(dbName, tableName, newQuerySQL, querySQLStr) : onTabChange(state.tableStack[checkIndex].key)
+        checkIndex === -1 ? initTable(dbName, tableName, newQuerySQL, querySQLStr) : onTabChange(state.tableObjectArray[checkIndex].key)
 
 
     }
 
     /**
-     * 初始化tab 并添加到栈中
-     * @param dbName 
-     * @param tableName 
-     * @param newQuerySQL 
-     * @param querySQLStr 
+     * 初始化tab 并添加到表对象数组中
+     * @param dbName 库名
+     * @param tableName 表名
+     * @param newQuerySQL 是否为自定义sql标识 type:boolean
+     * @param querySQLStr 查询的语句
+     * @returns void
      */
     function initTable(dbName: string, tableName: string, newQuerySQL: boolean, querySQLStr: string) {
         const tableStructureSQL = `DESCRIBE ${dbName}.${tableName}`
@@ -143,28 +144,28 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 // children: 
             }
 
-            let primaryKeyName = tableColumnsSource.filter((item: DBTable.TableDataItem) => { return item.Key === 'PRI' })
+            const primaryKeyData = tableColumnsSource.filter((item: DBTable.TableDataItem) => item.Key === 'PRI')
 
             setState({
                 type: 'updateMutiData',
                 payload: {
-                    // 更新表格栈数据
-                    tableStack: [
-                        ...state.tableStack,
+                    // 更新表格表对象数组数据
+                    tableObjectArray: [
+                        ...state.tableObjectArray,
                         newTab
                     ],
                     // 更新表格索引
                     activeTableIndex: state.activeTableIndex + 1,
                     // // 更新选中表格索引
                     activeTableKey,
-                    // 更新当前表格头部内容
+                    // 更新当前表格头部内容 [!废弃] 2023-4-27
                     // tableColumns,
-                    // 更新当前表格内容
+                    // 更新当前表格内容 [!废弃] 2023-4-27
                     // tableData,
                     activeTableData: {
                         dbName,
                         tableName,
-                        primaryKeyName
+                        primaryKeyData
                     }
                 }
             })
@@ -174,13 +175,13 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     }
 
     /**
-     * 更新栈内指定选中key的表数据 使用直接通过querySQL重新查询数据并更新到指定key的栈中
-     * @param needUpdateKey 需要更新的表栈
+     * 更新表对象数组内指定选中key的表数据 使用直接通过querySQL重新查询数据并更新到指定key的表对象数组中
+     * @param needUpdateKey 需要更新的表表对象数组
      * @returns void
      */
     function updateStackTableData(needUpdateKey: string) :void {
-        // 查询出制定key的栈中数据
-        let updateStackKeyHandle = state.tableStack.find(item => {
+        // 查询出制定key的表对象数组中数据
+        let updateStackKeyHandle = state.tableObjectArray.find(item => {
             return item.key === needUpdateKey
         })
         // 创建指令请求对象
@@ -201,7 +202,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 return { ...item, key: index }
             })
             // 修改合并数据
-            const renewTableStack = state.tableStack.map(item=>{
+            const renewtableObjectArray = state.tableObjectArray.map(item=>{
                 if (item.key === needUpdateKey) {
                     return {
                         ...item,
@@ -216,7 +217,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
             setState({
                 type: 'updateTableData',
                 payload: {
-                    tableStack: renewTableStack
+                    tableObjectArray: renewtableObjectArray
                 }
             })
         })
@@ -230,25 +231,25 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
      */
     function dbReducer(state: DBTable.State, action: DBTable.DBReducerAction): DBTable.State {
         switch (action.type) {
-            case "updateMutiData":
+            case "updateMutiData": // 更新多个数据 即在创建表标签栏时需要初始化、插入、修改多个数据
                 return {
                     ...state,
-                    tableColumns: action.payload.tableColumns,
-                    tableData: action.payload.tableData,
-                    tableStack: action.payload.tableStack,
+                    // tableColumns: action.payload.tableColumns,[!废弃] 2023-4-27
+                    // tableData: action.payload.tableData,[!废弃] 2023-4-27
+                    tableObjectArray: action.payload.tableObjectArray,
                     activeTableIndex: action.payload.activeTableIndex,
                     activeTableKey: action.payload.activeTableKey,
                     activeTableData: action.payload.activeTableData
                 }
-            case "switchActiveTableKey":
+            case "switchActiveTableKey": // 更新选中tab的key值，切换等事件中需要使用
                 return {
                     ...state,
                     activeTableKey: action.payload.activeTableKey
                 }
-            case "deleteTableStack":
+            case "deletetableObjectArray": // 删除站
                 return {
                     ...state,
-                    tableStack: action.payload.tableStack
+                    tableObjectArray: action.payload.tableObjectArray
                 }
             case "updateActiveData":
                 return {
@@ -260,10 +261,10 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     ...state,
                     modalView: action.payload.modalView
                 }
-            case "updateTableData":
+            case "updateTableData": // 更新tab表对象数组中的数据
                 return {
                     ...state,
-                    tableStack: action.payload.tableStack
+                    tableObjectArray: action.payload.tableObjectArray
                 }
             // case "updateTableListKeyIndex":
             //     return {
@@ -293,16 +294,16 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 activeTableKey: tabKey
             }
         })
-        // console.log(state.tableStack.find((item: any) => { return item.key === tabKey }))
-        let primaryKeyName = state.tableStack.find((item: any) => { return item.key === tabKey })?.tableColumnsSource.filter(item => { return item.Key === 'PRI' })
+        // console.log(state.tableObjectArray.find((item: any) => { return item.key === tabKey }))
+        let primaryKeyData = state.tableObjectArray.find((item: any) => { return item.key === tabKey })?.tableColumnsSource.filter(item => { return item.Key === 'PRI' })
         // 更新选中数据库名和表格名
         setState({
             type: 'updateActiveData',
             payload: {
                 activeTableData: {
-                    dbName: state.tableStack.find((item: any) => { return item.key === tabKey })?.dbName,
-                    tableName: state.tableStack.find((item: any) => { return item.key === tabKey })?.tableName,
-                    primaryKeyName
+                    dbName: state.tableObjectArray.find((item: any) => { return item.key === tabKey })?.dbName,
+                    tableName: state.tableObjectArray.find((item: any) => { return item.key === tabKey })?.tableName,
+                    primaryKeyData
                 }
             }
         })
@@ -315,18 +316,18 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
      * @returns void
      */
     function onTabEdit(targetKey: any, action: any):void {
-        const newTableStack = state.tableStack.filter((item: DBTable.TableStack) => {
+        const newtableObjectArray = state.tableObjectArray.filter((item: DBTable.tableObject) => {
             return item.key !== targetKey
         })
         switch (action) {
             case "remove":
                 setState({
-                    type: 'deleteTableStack',
+                    type: 'deletetableObjectArray',
                     payload: {
-                        tableStack: newTableStack
+                        tableObjectArray: newtableObjectArray
                     }
                 })
-                state.tableStack.length > 0 && onTabChange(state.tableStack[0].key)
+                state.tableObjectArray.length > 0 && onTabChange(state.tableObjectArray[0].key)
                 break
         }
         // console.log(targetKey,action)
@@ -334,10 +335,10 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
 
     /**
      * 获取当前选中tab框的handle
-     * @returns DBTable.TableStack
+     * @returns DBTable.tableObjectArray
      */
-    function getActiveTabHandle(): DBTable.TableStack | undefined {
-        return state.tableStack.find(item => {
+    function getActiveTabHandle(): DBTable.tableObject | undefined {
+        return state.tableObjectArray.find(item => {
             return item.key === state.activeTableKey
         })
     }
@@ -350,7 +351,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     function activeCurrentRow(rowIds: React.Key[], rowData: DBTable.TableDataItem):void {
         let activeRowData = rowData
         // console.log(activeRowData)
-        let newTableStack = state.tableStack.map(item => {
+        let newtableObjectArray = state.tableObjectArray.map(item => {
             if (item.key === state.activeTableKey) {
                 return {
                     ...item,
@@ -362,14 +363,14 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
             }
         })
         setState({
-            type: 'deleteTableStack',
+            type: 'deletetableObjectArray',
             payload: {
-                tableStack: newTableStack
+                tableObjectArray: newtableObjectArray
             }
         })
     }
 
-    // !废弃 2023-4-26
+    // [!废弃] 2023-4-26
     function activeCurrentRowHandle() {
         let tabHandle = getActiveTabHandle()
         console.log(tabHandle?.tableData.find(item => {
@@ -446,7 +447,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 return item
             }
         })
-        let tmpTableStack = state.tableStack.map(item => {
+        let tmptableObjectArray = state.tableObjectArray.map(item => {
             if (item.key === state.activeTableKey) {
                 return {
                     ...item,
@@ -462,13 +463,13 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         setState({
             type: 'updateTableData',
             payload: {
-                tableStack: tmpTableStack
+                tableObjectArray: tmptableObjectArray
             }
         })
         // console.log(tmpTableDataSource,tmpTableData)
     }
 
-    // !废弃 2023-4-26
+    // [!废弃] 2023-4-26
     // function addTableData(dbData: { formData?: any; insertId: any; dbName: any; tableName: any; PRILIST: any }) {
     //     const { tableDataSource, tableData } = getActiveTabHandle() || {}
     //     /**
@@ -477,7 +478,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     //     if (dbData.insertId === 0) {
     //         let tmpTableDataSource = tableDataSource?.concat(dbData.formData)
     //         let tmpTableData = tableData?.concat({ key: state.tableListKeyIndex, ...dbData.formData })
-    //         let tmpTableStack = state.tableStack.map(item => {
+    //         let tmptableObjectArray = state.tableObjectArray.map(item => {
     //             if (item.key === state.activeTableKey) {
     //                 return {
     //                     ...item,
@@ -493,7 +494,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     //         setState({
     //             type: 'updateTableData',
     //             payload: {
-    //                 tableStack: tmpTableStack
+    //                 tableObjectArray: tmptableObjectArray
     //             }
     //         })
     //     } else {
@@ -517,8 +518,8 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     //             const insertRowData = insertRowList[0]
     //             let tmpTableDataSource = tableDataSource?.concat(insertRowData)
     //             let tmpTableData = tableData?.concat({ key: state.tableListKeyIndex, ...insertRowData })
-    //             // 更新栈中激活选中表的数据
-    //             let tmpTableStack = state.tableStack.map(item => {
+    //             // 更新表对象数组中激活选中表的数据
+    //             let tmptableObjectArray = state.tableObjectArray.map(item => {
     //                 if (item.key === state.activeTableKey) {
     //                     return {
     //                         ...item,
@@ -534,7 +535,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     //             setState({
     //                 type: 'updateTableData',
     //                 payload: {
-    //                     tableStack: tmpTableStack
+    //                     tableObjectArray: tmptableObjectArray
     //                 }
     //             })
     //             setState({
@@ -573,7 +574,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         // const PRI = state.activeTableData.primaryKeyName
         // const PRIValue = PRI && getActiveTabHandle()?.activeRowData[PRI]
         // 获取主键名和主键内容拼接 多主键问题
-        const PRILIST = state.activeTableData.primaryKeyName?.map((item:any)=>{
+        const PRILIST = state.activeTableData.primaryKeyData?.map((item:any)=>{
             return `${item.Field}='${getActiveTabHandle()?.activeRowData[item.Field]}'`
         })
 
@@ -622,7 +623,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         // const PRI = state.activeTableData.primaryKeyName
         // const PRIValue = PRI && getActiveTabHandle()?.activeRowData[PRI]
         // 获取主键名和主键内容拼接
-        const PRILIST = state.activeTableData.primaryKeyName?.map((item:any)=>{
+        const PRILIST = state.activeTableData.primaryKeyData?.map((item:any)=>{
             return `${item.Field}='${getActiveTabHandle()?.activeRowData[item.Field]}'`
         })
         // console.log(PRILIST)
@@ -687,7 +688,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
         })
     }
 
-    return state.tableStack.length > 0 ?
+    return state.tableObjectArray.length > 0 ?
         // 数据表页面
         <div className='db_table'>
             {/* 消息框框 */}
@@ -760,7 +761,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                 onChange={onTabChange}
                 activeKey={state.activeTableKey}
                 onEdit={onTabEdit}
-                items={state.tableStack} />
+                items={state.tableObjectArray} />
             {/* 表格和输入框 当为自定义输入内容时才展示输入框 */}
             <div>
                 {
