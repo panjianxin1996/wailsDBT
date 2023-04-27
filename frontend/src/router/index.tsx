@@ -2,7 +2,6 @@ import React from 'react'
 import { RouteObject,Navigate  } from 'react-router-dom'
 import Home from '../pages/Home'
 import DBList from '../pages/DBList'
-import SQLMonacoEditor from '../components/Monaco'
 import Demo from '../pages/ShopDemo'
 
 const Routes: RouteObject[] = [
