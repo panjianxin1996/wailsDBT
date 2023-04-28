@@ -7,6 +7,13 @@ export namespace DBTable {
         hintDBData: monacoEditor.Hints; // 编辑器输入提示数据集
         connDBId: string; // 连接的数据库句柄
     }
+
+    interface ShowDBTableRef {
+        [x: string]: any;
+        state: State,
+        CreateTable: (params: DBTable.CreateTabParams)=>void
+    }
+
     interface State {
         tableObjectArray: tableObject[]; // 表格表对象数组
         activeTableIndex: number; // 当前索引自增
@@ -82,6 +89,16 @@ export namespace DBTable {
     interface DBReducerAction {
         type: string; // 操作类型
         payload: State | State.activeTableKey | State.tableStack; // 将要更新的数据格式
+    }
+
+    /**
+     * 创建table时需要传入的数据
+     */
+    interface CreateTabParams {
+        dbName?: string; // 库名
+        tableName?: string; // 表名
+        newQuerySQL?: boolean; // 自定义SQL Flag
+        querySQLStr?: string // 自定义SQL
     }
     
 }

@@ -5,8 +5,15 @@
         cursor: pointer;
         height: 30px;
         line-height: 30px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
         &:hover {
             background-color: rgba(109, 201, 255, 0.363);
+        }
+        .db_icon {
+            font-size: 20px;
+            margin-right: 8px;
         }
     }
 }

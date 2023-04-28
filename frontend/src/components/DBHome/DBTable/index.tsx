@@ -10,12 +10,13 @@ import {
 
 } from '@ant-design/icons'
 import SQLMonacoEditor from "../../../components/Monaco/index"
+import {DBTableStructureModal,DBTabStructure} from "../index"
 import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo } from '../../../utils/index'
 import plantImg from '../../../assets/images/plant.png'
 import './index.scss'
 import type { DBTable } from "./DBTable"
 
-const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
+const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref) => {
     const { connDBId, hintDBData } = props
 
     const tableKeyword = 'tab_'
@@ -40,6 +41,7 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
     const [messageApi, messageContextHolder] = message.useMessage();
     const [notificationApi, notificationContextHolder] = notification.useNotification();
     const [modalApi, modalContextHolder] = Modal.useModal();
+    const DBTabStructureRef = useRef<DBTabStructure.DBTabStructureRef>(null)
 
     useImperativeHandle(
         ref,
@@ -116,28 +118,52 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
      * @param querySQLStr 自定义sql语句
      * @returns void
      */
-    function CreateTable(dbName: string, tableName: string, newQuerySQL: boolean = false, querySQLStr: string): void {
-        if (!dbName || !tableName) {
-            return
+    function CreateTable(params: DBTable.CreateTabParams): void {
+        const {dbName,tableName,newQuerySQL = false} = params
+        if (newQuerySQL) {
+            // console.log(newQuerySQL)
+            initCustomTable(params)
+        } else {
+            if (!dbName || !tableName) {
+                return
+            }
+            let checkIndex: number = state.tableObjectArray.findIndex((item: any) => {
+                return (item.dbName === dbName && item.tableName === tableName)
+            })
+            checkIndex === -1 ? initTable(params) : onTabChangeEvent(state.tableObjectArray[checkIndex].key)
         }
-        let checkIndex: number = state.tableObjectArray.findIndex((item: any) => {
-            return (item.dbName === dbName && item.tableName === tableName)
-        })
-        checkIndex === -1 ? initTable(dbName, tableName, newQuerySQL, querySQLStr) : onTabChangeEvent(state.tableObjectArray[checkIndex].key)
-
-
     }
 
+    /**
+     * 按照用户输入的sql命令进行创建tab页
+     * @param params DBTable.CreateTabParams
+     */
+    function initCustomTable (params: DBTable.CreateTabParams):void {
+        const {querySQLStr} = params
+        // const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
+        let reqData: RequestGo.RequestGoData[] = [
+            {
+                operType: operationTypes.DB_OPERATION,
+                connDBId,
+                data: {
+                    type: dbOperationTypes.CUSTOM_SQL,
+                    customSQL: querySQLStr
+                }
+            },
+        ]
+        // console.log(querySQLStr)
+        requestGoCommon(reqData).then(responseList => {
+            console.log(responseList)
+        })
+    }
 
     /**
      * 初始化tab 并添加到表对象数组中
-     * @param dbName 库名
-     * @param tableName 表名
-     * @param newQuerySQL 是否为自定义sql标识 type:boolean
-     * @param querySQLStr 查询的语句
+     * @param params DBTable.CreateTabParams
      * @returns void
      */
-    function initTable(dbName: string, tableName: string, newQuerySQL: boolean, querySQLStr: string) {
+    function initTable(params: DBTable.CreateTabParams) {
+        const {dbName,tableName,newQuerySQL = false,querySQLStr} = params
         const tableStructureSQL = `DESCRIBE ${dbName}.${tableName}`
         const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
         let reqData: RequestGo.RequestGoData[] = [
@@ -865,8 +891,9 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                     </Form>
                 </div>
             </Modal>
+            <DBTableStructureModal ref={DBTabStructureRef} showModalFlag={true}/>
             <Row className='tab_header' align='middle'>
-                <Col span={16}>
+                <Col span={20}>
                     <Row align='middle'>
                         <Col>
                             <Avatar className='table_avatar' src={<img src={plantImg} alt='表格' />} shape="square" size={50} />
@@ -880,9 +907,9 @@ const ShowDBTable = forwardRef((props: DBTable.Props, ref: any) => {
                         </Col>
                     </Row>
                 </Col>
-                <Col span={8}>
+                <Col span={4}>
                     {/* <Button onClick={addTable}>新建查询</Button> */}
-                    <Button>编辑表结构</Button>
+                    <Button type="primary" onClick={()=>{ DBTabStructureRef.current?.ToggleModalEvent() }}>编辑表结构</Button>
                 </Col>
             </Row>
             {/* 表标签页 */}

@@ -1,6 +1,6 @@
 import React from 'react'
 import { RouteObject,Navigate  } from 'react-router-dom'
-import Home from '../pages/Home'
+import DBHome from '../pages/DBHome'
 import DBList from '../pages/DBList'
 import Demo from '../pages/ShopDemo'
 
@@ -10,8 +10,8 @@ const Routes: RouteObject[] = [
         element: <Navigate to='/dblist' replace />
     },
     {
-        path: '/home',
-        element: <Home />,
+        path: '/dbhome',
+        element: <DBHome />,
         
     },
     {

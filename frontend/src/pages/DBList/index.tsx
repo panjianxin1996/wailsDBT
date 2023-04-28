@@ -2,8 +2,9 @@ import { Card, Input, Layout, Menu, MenuProps, Modal, Image, Row, Col, Form, Che
 import { ProjectTwoTone, SearchOutlined, EditOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from "react"
 import './index.scss'
-import { DBListCard, DBListRegisterModal,DBListCardProps } from '../../components/DBList'
+import { DBListCard, DBListRegisterModal, DBListCardProps } from '../../components/DBList'
 import { useNavigate } from "react-router-dom";
+import type {DBList} from './DBList'
 // import { navigate } from "../../utils/index";
 
 import { GoConnectDB, GoPingDB } from "../../../wailsjs/go/main/App";
@@ -19,14 +20,18 @@ const ConnectDB: React.FC = () => {
     const navigate = useNavigate();
     const [modalWindow, setModalWindow] = useState<boolean>(false);
     const [dbList, setDBList] = useState<DBListCardProps[]>(storageDBList);
-    const [spinning,setSpinning] = useState<boolean>(false)
-    const [spinningTips,setSpinningTips] = useState<string>('')
+    const [spinning, setSpinning] = useState<boolean>(false);
+    const [spinningTips, setSpinningTips] = useState<string>('');
 
-    const [connDB, setConnDB] = useState('')
+    const [connDBList, setConnDBList] = useState<DBList.connDBInfo[]>([])
 
 
-
-    function renderBlankCard(currentCount: number) { // 计算出一行四个空余多少自动补全，以防弹性布局最后一排样式问题
+    /**
+     * 计算出一行四个空余多少自动补全，以防弹性布局最后一排样式问题
+     * @param currentCount 
+     * @returns JSX.Element[]
+     */
+    function renderBlankCard(currentCount: number): JSX.Element[] {
         let count = currentCount % 4 != 0 ? parseInt((currentCount / 4 + 1).toString()) * 4 - currentCount : 0
         let backEles = new Array(count).fill([]).map((item, i) => {
             return <DBListCard type={3} key={'blank_' + i} />
@@ -34,7 +39,12 @@ const ConnectDB: React.FC = () => {
         return backEles
     }
 
-    async function addDataBase(dbConifg: DBListCardProps) { // 新增数据库
+    /**
+     * 新增数据库连接配置
+     * @param dbConifg DBListCardProps
+     * @returns Promise<void>
+     */
+    async function addDataBase(dbConifg: DBListCardProps): Promise<void> {
         // { dbname, dbcontent, username,password,host,port, type: 0 }
         let changeDBList = [{ ...dbConifg }, ...dbList]
         console.log(changeDBList)
@@ -42,10 +52,64 @@ const ConnectDB: React.FC = () => {
         localStorage.setItem('my_db_list', JSON.stringify(changeDBList))
     }
 
-    function delDataBase(delIndex: number) { // 删除数据库
+    /**
+     * 删除数据库连接配置
+     * @param delIndex 删除id
+     * @returns void
+     */
+    function delDataBase(delIndex: number): void {
         let changeDBList = dbList.filter((item, i) => { return i != delIndex })
         setDBList(changeDBList)
         localStorage.setItem('my_db_list', JSON.stringify(changeDBList))
+    }
+
+    function onConnClickEvent (cardItem: DBListCardProps, key: string) {
+        console.log(key)
+        console.log(connDBList)
+        setSpinning(true)
+        setSpinningTips('正在连接中。。。')
+        const checkHasConnIndex = connDBList.findIndex((connDBItem)=>{return connDBItem.cardKey === key})
+        if (checkHasConnIndex === -1) {
+            console.log('添加进入连接')
+            connectDBRequest(cardItem, key, 'add')
+        } else {
+            let connId = connDBList[checkHasConnIndex].connHandle
+            GoPingDB(connId).then((connFlag: boolean) => {
+                // console.log(connFlag)
+                if (connFlag) {
+                    console.log('存在进入连接')
+                    setTimeout(() => {
+                        navigate('/dbhome', { state: { connId, ...cardItem } })
+                        setSpinning(false)
+                    }, 1500)
+                } else {
+                    console.log('存在更新连接')
+                    connectDBRequest(cardItem, key, 'update')
+                }
+            })
+        }
+    }
+
+    function connectDBRequest (cardItem: DBListCardProps,cardKey: string,type: string) {
+        GoConnectDB(JSON.stringify(cardItem)).then((connId: string) => {
+            if (type === 'add') {
+                setConnDBList([...connDBList,{cardKey,connHandle: connId}])
+            } else {
+                let newConnDBList = connDBList.filter((item)=>item.cardKey !== cardKey).concat({cardKey,connHandle: connId})
+                setConnDBList(newConnDBList)
+            }
+            GoPingDB(connId).then((connFlag: boolean) => {
+                // console.log(connFlag)
+                if (connFlag) {
+                    // setSpinningTips('连接成功！')
+                    setTimeout(() => {
+                        navigate('/dbhome', { state: { connId, ...cardItem } })
+                        setSpinning(false)
+                    }, 1500)
+                }
+            })
+
+        })
     }
 
     useEffect(() => {
@@ -75,7 +139,7 @@ const ConnectDB: React.FC = () => {
                 </div>
                 <div className="header_right_box">
                     <p>user</p>
-                    <Button onClick={() => { console.log(connDB); GoPingDB(connDB).then((res: boolean) => { console.log(res) }) }}>ping数据库</Button>
+                    {/* <Button onClick={() => { console.log(connDB); GoPingDB(connDB).then((res: boolean) => { console.log(res) }) }}>ping数据库</Button> */}
                 </div>
 
             </div>
@@ -90,34 +154,16 @@ const ConnectDB: React.FC = () => {
                 <div className="content_main flex_row flex_align_center">
                     {
                         dbList.map((item, index) => {
+                            let DBListCardKey = "dblistcard_" + index.toString()
                             return <DBListCard
-                                key={"dblistcard_" + index}
+                                key={DBListCardKey}
                                 cardConfig={item}
                                 // dbcontent={item.dbcontent}
                                 // username={item.username}
                                 type={item.type}
                                 onClick={() => { navigate('/') }}
                                 onDelClick={() => { delDataBase(index) }}
-                                onConnClick={() => {
-                                    setSpinning(true)
-                                    setSpinningTips('正在连接中。。。')
-                                    GoConnectDB(JSON.stringify(item)).then((connId: string) => {
-                                        setConnDB(connId)
-                                        // console.log(connId)
-                                        // setSpinning(false)
-                                        GoPingDB(connId).then((connFlag:boolean)=>{
-                                            // console.log(connFlag)
-                                            if (connFlag) {
-                                                // setSpinningTips('连接成功！')
-                                                setTimeout(()=>{
-                                                    navigate('/home',{state: {connId,...item}})
-                                                    setSpinning(false)
-                                                },1500)
-                                            }
-                                        })
-                                        
-                                    })
-                                }}
+                                onConnClick={() => onConnClickEvent(item,DBListCardKey)}
                             />
                         })
                     }
@@ -130,6 +176,7 @@ const ConnectDB: React.FC = () => {
                         // 渲染空白区域
                         renderBlankCard(dbList.length + 1)
                     }
+                    <p>{JSON.stringify(connDBList)}</p>
                 </div>
             </Content>
         </Layout></Spin>)

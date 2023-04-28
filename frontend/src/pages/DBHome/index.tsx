@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useReducer, useRef } from 'react'
 import {
+    DatabaseOutlined,
     LaptopOutlined,
     NotificationOutlined,
     UserOutlined,
@@ -16,8 +17,8 @@ import {
     GoMysqlDataBase,
     DatabaseMenu,
     DataBaseList
-} from './Home'
-import { SelectDBList, ShowDBTable } from "../../components/Home/index"
+} from './DBHome'
+import { DBTable, SelectDBList, ShowDBTable } from "../../components/DBHome/index"
 import SQLMonacoEditor, { monacoEditor } from "../../components/Monaco/index"
 import { useLocation } from 'react-router-dom'
 import { GoOperateDB } from "../../../wailsjs/go/main/App"
@@ -27,7 +28,7 @@ import "./index.scss"
 
 const { Header, Content, Footer, Sider } = Layout;
 
-function Home() {
+function DBHome() {
     /**
      *  设置默认主题
      */
@@ -62,7 +63,7 @@ function Home() {
     // 用useReducer处理数据库信息
     const [allDBState, setAllDBstate] = useState<monacoEditor.Hints>({})
     // 
-    let ShowDBTableRef: any = useRef(null)
+    let ShowDBTableRef = useRef<DBTable.ShowDBTableRef>(null)
 
     function dataReducer() {
         let dbState: monacoEditor.Hints = {}
@@ -123,8 +124,8 @@ function Home() {
         getCurrentDBTables(databases && databases[activeDBIndex].Database)
     }
 
-    function handleOpenChange() {
-        setOpenPopover(true)
+    function handleOpenChange(newOpen: boolean) {
+        setOpenPopover(newOpen)
     }
 
     /**
@@ -159,7 +160,13 @@ function Home() {
         // console.log(item)
         setActiveDBtable(item.key)
         const [dbName, tableName] = item.key.split('/')
-        ShowDBTableRef.current && ShowDBTableRef.current.CreateTable(dbName, tableName)
+        // ShowDBTableRef.current.dasda
+        ShowDBTableRef.current?.CreateTable({dbName, tableName})
+    }
+
+    function onSearchEvent (querySQLStr: string) {
+        // console.log(querySQLStr)
+        ShowDBTableRef.current?.CreateTable({newQuerySQL: true,querySQLStr})
     }
 
     return (
@@ -179,7 +186,9 @@ function Home() {
                         >
                             <div className='card_box flex_col flex_just_center'>
                                 <div className='select_card'>
-                                    <p className='select_card_via'>{dbName}</p>
+                                    <p className='select_card_via'>
+                                        <DatabaseOutlined style={{fontSize: "24px"}} />
+                                    </p>
                                     <span className='select_card_text'>{databases && databases[activeDBIndex].Database}</span>
                                     <RetweetOutlined />
                                 </div>
@@ -198,7 +207,12 @@ function Home() {
                     <Content className='right_content' style={{ minHeight: 280 }}>
                         {/* <Button onClick={handleClick}>触发useReducer</Button> */}
                         <div className='content_search_box flex_col flex_just_center'>
-                            <Input prefix={<SearchOutlined className='search_input_icon' />} bordered={false} placeholder='查询你所需要的数据' />
+                            <Input.Search 
+                                prefix={<SearchOutlined className='search_input_icon' />} 
+                                bordered={false} placeholder='您可以输入SQL语句或者创建一个空白的查询框。' 
+                                enterButton="创建查询"
+                                onSearch={onSearchEvent}
+                            />
                         </div>
                         <div className='content_main'>
                             {/* <SQLMonacoEditor
@@ -216,4 +230,4 @@ function Home() {
     )
 }
 
-export default Home
+export default DBHome

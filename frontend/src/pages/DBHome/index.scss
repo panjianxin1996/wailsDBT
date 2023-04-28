@@ -56,7 +56,10 @@
                         background-color: rgb(0, 40, 50);
                         overflow: hidden;
                         line-height: 40px;
-                        color: rgb(88, 198, 181)
+                        color: rgb(88, 198, 181);
+                        text-align: center;
+                        display: flex;
+                        justify-content: center;
                     }
 
                     .select_card_text {
