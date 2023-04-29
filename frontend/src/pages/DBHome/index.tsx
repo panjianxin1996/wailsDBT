@@ -40,7 +40,7 @@ function DBHome() {
      */
     const location: any = useLocation()
     // console.log(location.state)
-    const { connId, createDate, dbName, dbType, host, password, port, type, username } = location.state
+    const { connectId, createDate, dbName, dbType, host, password, port, type, username } = location.state
     //  数据库列表
     const [databases, setDatabases] = useState<GoMysqlDataBase[]>()
     // 当前数据库索引
@@ -68,11 +68,11 @@ function DBHome() {
     function dataReducer() {
         let dbState: monacoEditor.Hints = {}
         // console.log("执行")
-        GoOperateDB(connId, JSON.stringify({ type: 0 })).then((allDBList) => {
+        GoOperateDB(connectId, JSON.stringify({ type: 0 })).then((allDBList) => {
             let tmpDBList = allDBList ? JSON.parse(allDBList) : []
             tmpDBList.forEach((db: GoMysqlDataBase) => {
                 let currentDB = db.Database
-                GoOperateDB(connId, JSON.stringify({ type: 1, currentDB })).then(tables => {
+                GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(tables => {
                     let tableList = tables ? JSON.parse(tables) : []
                     dbState[currentDB] = tableList.map((table: GoMysqlTables) => table[`Tables_in_${currentDB}`])
                     // 性能优化 只能当进行的所有操作完成时才进行state更新以及渲染
@@ -108,7 +108,7 @@ function DBHome() {
      */
     function getAllDataBase() {
         // 获取所有数据库
-        GoOperateDB(connId, JSON.stringify({ type: 0 })).then(res => {
+        GoOperateDB(connectId, JSON.stringify({ type: 0 })).then(res => {
             setDatabases(JSON.parse(res))
             setActiveDBIndex(0)
         })
@@ -138,7 +138,7 @@ function DBHome() {
             return
         }
         // 获取数据库里的表
-        GoOperateDB(connId, JSON.stringify({ type: 1, currentDB })).then(res => {
+        GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(res => {
             let result = res ? JSON.parse(res) : []
             let tables = result.map((item: GoMysqlTables, index: number) => {
                 // console.log(item[`Tables_in_${currentDB}`])
@@ -220,7 +220,7 @@ function DBHome() {
                                 hintData={allDBState}
                             /> */}
                             {/* <button onClick={test}>test</button> */}
-                            <ShowDBTable ref={ShowDBTableRef} connDBId={connId} hintDBData={allDBState} />
+                            <ShowDBTable ref={ShowDBTableRef} connDBId={connectId} hintDBData={allDBState} />
 
                         </div>
                     </Content>

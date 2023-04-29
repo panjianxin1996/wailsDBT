@@ -1,10 +1,11 @@
 import { Card, Input, Layout, Menu, MenuProps, Modal, Image, Row, Col, Form, Checkbox, Button, InputNumber, Select, Space, Spin } from "antd"
 import { ProjectTwoTone, SearchOutlined, EditOutlined } from '@ant-design/icons';
-import React, { useEffect, useState } from "react"
+import React, { useContext, useEffect, useState } from "react"
 import './index.scss'
 import { DBListCard, DBListRegisterModal, DBListCardProps } from '../../components/DBList'
 import { useNavigate } from "react-router-dom";
 import type {DBList} from './DBList'
+import AppContext from '../../AppContext'
 // import { navigate } from "../../utils/index";
 
 import { GoConnectDB, GoPingDB } from "../../../wailsjs/go/main/App";
@@ -24,6 +25,8 @@ const ConnectDB: React.FC = () => {
     const [spinningTips, setSpinningTips] = useState<string>('');
 
     const [connDBList, setConnDBList] = useState<DBList.connDBInfo[]>([])
+    const context = useContext(AppContext)
+    // console.log(context)
 
 
     /**
@@ -63,49 +66,66 @@ const ConnectDB: React.FC = () => {
         localStorage.setItem('my_db_list', JSON.stringify(changeDBList))
     }
 
-    function onConnClickEvent (cardItem: DBListCardProps, key: string) {
-        console.log(key)
-        console.log(connDBList)
+    function onConnClickEvent (cardItem: DBListCardProps, listKey: string) {
+        const connDBList = context.state.dbList;
+        // console.log(key)
+        // console.log(connDBList)
         setSpinning(true)
         setSpinningTips('正在连接中。。。')
-        const checkHasConnIndex = connDBList.findIndex((connDBItem)=>{return connDBItem.cardKey === key})
+        const checkHasConnIndex = connDBList.findIndex((connDBItem)=>{return connDBItem.listKey === listKey})
         if (checkHasConnIndex === -1) {
             console.log('添加进入连接')
-            connectDBRequest(cardItem, key, 'add')
+            connectDBRequest(cardItem, listKey, 'add')
         } else {
-            let connId = connDBList[checkHasConnIndex].connHandle
-            GoPingDB(connId).then((connFlag: boolean) => {
+            let connectId = connDBList[checkHasConnIndex].connectId
+            GoPingDB(connectId).then((connFlag: boolean) => {
                 // console.log(connFlag)
                 if (connFlag) {
                     console.log('存在进入连接')
                     setTimeout(() => {
-                        navigate('/dbhome', { state: { connId, ...cardItem } })
+                        navigate('/dbhome', { state: { connectId, ...cardItem } })
                         setSpinning(false)
                     }, 1500)
                 } else {
                     console.log('存在更新连接')
-                    connectDBRequest(cardItem, key, 'update')
+                    connectDBRequest(cardItem, listKey, 'update')
                 }
             })
         }
     }
 
-    function connectDBRequest (cardItem: DBListCardProps,cardKey: string,type: string) {
-        GoConnectDB(JSON.stringify(cardItem)).then((connId: string) => {
+    function connectDBRequest (cardItem: DBListCardProps,listKey: string,type: string) {
+        const connDBList = context.state.dbList;
+        GoConnectDB(JSON.stringify(cardItem)).then((connectId: string) => {
+            console.log(connectId)
             if (type === 'add') {
-                setConnDBList([...connDBList,{cardKey,connHandle: connId}])
+                context.dispatch({
+                    type: 'updateAppData',
+                    newDBList: [...connDBList,{listKey,connectId: connectId}]
+                })
+                // setConnDBList([...connDBList,{cardKey,connHandle: connectId}])
             } else {
-                let newConnDBList = connDBList.filter((item)=>item.cardKey !== cardKey).concat({cardKey,connHandle: connId})
-                setConnDBList(newConnDBList)
+                let newConnDBList = connDBList.filter((item)=>item.listKey !== listKey).concat({listKey,connectId})
+                // let newConnDBList = connDBList.filter((item)=>item.cardKey !== cardKey).concat({cardKey,connHandle: connectId})
+                context.dispatch({
+                    type: 'updateAppData',
+                    newDBList: newConnDBList
+                })
+                // setConnDBList(newConnDBList)
             }
-            GoPingDB(connId).then((connFlag: boolean) => {
+            GoPingDB(connectId).then((connFlag: boolean) => {
                 // console.log(connFlag)
                 if (connFlag) {
                     // setSpinningTips('连接成功！')
                     setTimeout(() => {
-                        navigate('/dbhome', { state: { connId, ...cardItem } })
+                        navigate('/dbhome', { state: { connectId, ...cardItem } })
                         setSpinning(false)
                     }, 1500)
+                } else {
+                    setSpinningTips('连接失败，没有连接到服务！')
+                    setTimeout(() => {
+                        setSpinning(false)
+                    },1500)
                 }
             })
 
@@ -176,7 +196,7 @@ const ConnectDB: React.FC = () => {
                         // 渲染空白区域
                         renderBlankCard(dbList.length + 1)
                     }
-                    <p>{JSON.stringify(connDBList)}</p>
+                    {/* <p>{JSON.stringify(connDBList)}{JSON.stringify(context.state.dbList)}</p> */}
                 </div>
             </Content>
         </Layout></Spin>)
