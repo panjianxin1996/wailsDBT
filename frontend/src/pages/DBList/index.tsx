@@ -73,21 +73,24 @@ const ConnectDB: React.FC = () => {
         setSpinning(true)
         setSpinningTips('正在连接中。。。')
         const checkHasConnIndex = connDBList.findIndex((connDBItem)=>{return connDBItem.listKey === listKey})
-        if (checkHasConnIndex === -1) {
-            console.log('添加进入连接')
+        // 不存在连接句柄，创建连接
+        if (checkHasConnIndex === -1) { 
+            // console.log('添加进入连接')
             connectDBRequest(cardItem, listKey, 'add')
         } else {
             let connectId = connDBList[checkHasConnIndex].connectId
             GoPingDB(connectId).then((connFlag: boolean) => {
                 // console.log(connFlag)
-                if (connFlag) {
-                    console.log('存在进入连接')
+                // 存在连接句柄并没有失效，直接进入
+                if (connFlag) { 
+                    // console.log('存在进入连接')
                     setTimeout(() => {
                         navigate('/dbhome', { state: { connectId, ...cardItem } })
                         setSpinning(false)
                     }, 1500)
-                } else {
-                    console.log('存在更新连接')
+                // 存在句柄，但是连接已经失效了，需要重新连接
+                } else { 
+                    // console.log('存在更新连接')
                     connectDBRequest(cardItem, listKey, 'update')
                 }
             })
@@ -97,7 +100,7 @@ const ConnectDB: React.FC = () => {
     function connectDBRequest (cardItem: DBListCardProps,listKey: string,type: string) {
         const connDBList = context.state.dbList;
         GoConnectDB(JSON.stringify(cardItem)).then((connectId: string) => {
-            console.log(connectId)
+            // console.log(connectId)
             if (type === 'add') {
                 context.dispatch({
                     type: 'updateAppData',

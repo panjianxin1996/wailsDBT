@@ -69,11 +69,12 @@ function DBHome() {
         let dbState: monacoEditor.Hints = {}
         // console.log("执行")
         GoOperateDB(connectId, JSON.stringify({ type: 0 })).then((allDBList) => {
-            let tmpDBList = allDBList ? JSON.parse(allDBList) : []
+            // console.log(allDBList)
+            let tmpDBList = allDBList ? JSON.parse(allDBList).dataList : []
             tmpDBList.forEach((db: GoMysqlDataBase) => {
                 let currentDB = db.Database
                 GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(tables => {
-                    let tableList = tables ? JSON.parse(tables) : []
+                    let tableList = tables ? JSON.parse(tables).dataList : []
                     dbState[currentDB] = tableList.map((table: GoMysqlTables) => table[`Tables_in_${currentDB}`])
                     // 性能优化 只能当进行的所有操作完成时才进行state更新以及渲染
                     if (Object.keys(dbState).length === tmpDBList.length) {
@@ -109,7 +110,7 @@ function DBHome() {
     function getAllDataBase() {
         // 获取所有数据库
         GoOperateDB(connectId, JSON.stringify({ type: 0 })).then(res => {
-            setDatabases(JSON.parse(res))
+            setDatabases(JSON.parse(res).dataList)
             setActiveDBIndex(0)
         })
     }
@@ -139,7 +140,7 @@ function DBHome() {
         }
         // 获取数据库里的表
         GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(res => {
-            let result = res ? JSON.parse(res) : []
+            let result = res ? JSON.parse(res).dataList : []
             let tables = result.map((item: GoMysqlTables, index: number) => {
                 // console.log(item[`Tables_in_${currentDB}`])
                 return { key: currentDB + '/' + item[`Tables_in_${currentDB}`], label: item[`Tables_in_${currentDB}`], icon: <TableOutlined /> }

@@ -87,41 +87,56 @@ func Operation(db *sql.DB, operateDataJson string) interface{} {
 
 // 通用查询
 func queryData(db *sql.DB, querySQL string) string {
+	backJSON := make(map[string]interface{})
 	rows, err := db.Query(querySQL)
 	if err != nil {
-		fmt.Println("Err:", err)
+		backJSON["code"] = -1
+		backJSON["errorMsg"] = err.Error()
+		backJSON["dataList"] = nil
+		// fmt.Println("Err:", err)
+		bytes, _ := json.Marshal(backJSON)
+		return string(bytes)
 	}
-	cols, _ := rows.Columns()
-	rowsList := make([]interface{}, len(cols))      // 全部数据的列表
-	resultList := make([]map[string]interface{}, 0) // 设置可增长的全部数据
+	cols, searchErr := rows.Columns()
+	if searchErr != nil {
+		backJSON["code"] = -1
+		backJSON["errorMsg"] = err.Error()
+		backJSON["dataList"] = nil
+		// fmt.Println("Err:", err)
+	} else {
+		rowsList := make([]interface{}, len(cols))      // 全部数据的列表
+		resultList := make([]map[string]interface{}, 0) // 设置可增长的全部数据
 
-	for i := range cols {
-		var ii interface{}
-		rowsList[i] = &ii
-	}
-
-	for rows.Next() {
-		err := rows.Scan(rowsList...)
-		if err != nil {
-			fmt.Println("Err:", err)
+		for i := range cols {
+			var ii interface{}
+			rowsList[i] = &ii
 		}
-		rowData := make(map[string]interface{}) // 单条数据的键值对
-		for index, data := range rowsList {
-			tmpData := *data.(*interface{}) // 取出interface里面的数据
-			// fmt.Println(tmpData)
-			if tmpData != nil {
-				// fmt.Printf("%T", tmpData)
-				rowData[cols[index]] = string(tmpData.([]byte)) // 单条数据内容赋值
-			} else {
-				rowData[cols[index]] = "" // 如果没有数据则设置为空
+
+		for rows.Next() {
+			err := rows.Scan(rowsList...)
+			if err != nil {
+				fmt.Println("Err:", err)
 			}
+			rowData := make(map[string]interface{}) // 单条数据的键值对
+			for index, data := range rowsList {
+				tmpData := *data.(*interface{}) // 取出interface里面的数据
+				// fmt.Println(tmpData)
+				if tmpData != nil {
+					// fmt.Printf("%T", tmpData)
+					rowData[cols[index]] = string(tmpData.([]byte)) // 单条数据内容赋值
+				} else {
+					rowData[cols[index]] = "" // 如果没有数据则设置为空
+				}
 
+			}
+			resultList = append(resultList, rowData) // 插入单条数据到总列表中
 		}
-		resultList = append(resultList, rowData) // 插入单条数据到总列表中
+		defer rows.Close()
+		backJSON["code"] = 1
+		backJSON["errorMsg"] = nil
+		backJSON["dataList"] = resultList
 	}
-
-	defer rows.Close()
-	bytes, _ := json.Marshal(resultList)
+	bytes, _ := json.Marshal(backJSON)
 	return string(bytes)
 }
 

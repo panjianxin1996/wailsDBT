@@ -139,7 +139,8 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
      * @param params DBTable.CreateTabParams
      */
     function initCustomTable (params: DBTable.CreateTabParams):void {
-        const {querySQLStr} = params
+        const {querySQLStr,newQuerySQL} = params
+        const newTabKey = insertNewTable({newQuerySQL,QuerySQL:querySQLStr})
         // const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
         let reqData: RequestGo.RequestGoData[] = [
             {
@@ -154,6 +155,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         // console.log(querySQLStr)
         requestGoCommon(reqData).then(responseList => {
             console.log(responseList)
+            
         })
     }
 
@@ -186,10 +188,60 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         ]
         // 通过Promise.all 进行多接口请求并渲染表格头部、内容、tab的数据
         requestGoCommon(reqData).then(responseList => {
-            // 指定默认选中为当前创建的标签
-            let activeTableKey: string = tableKeyword + (state.activeTableIndex).toString()
-            // 结构接口返回数据
-            const [tableColumnsSource, tableDataSource] = responseList
+            insertNewTable({responseList,dbName,tableName,newQuerySQL,tableStructureSQL,QuerySQL})
+        })
+    }
+
+    function insertNewTable (newTable:any):string {
+        const {responseList,dbName,tableName,newQuerySQL,tableStructureSQL,QuerySQL} = newTable
+        // 指定默认选中为当前创建的标签
+        let activeTableKey: string = tableKeyword + (state.activeTableIndex).toString()
+        // 结构接口返回数据
+        if (newQuerySQL) {
+            let newTab = {
+                key: activeTableKey,
+                activeRowIndex: [],
+                activeRowData: [],
+                newQuerySQL,
+                tableStructureSQL:'',
+                QuerySQL,
+                tableColumnsSource: [],
+                tableDataSource:[],
+                tableColumns:[],
+                tableData:[],
+                label: "新建查询",
+                dbName:'新建查询',
+                tableName:'',
+                // children: 
+            }
+            setState({
+                type: 'updateMutiData',
+                payload: {
+                    // 更新表格表对象数组数据
+                    tableObjectArray: [
+                        ...state.tableObjectArray,
+                        newTab
+                    ],
+                    // 更新表格索引
+                    activeTableIndex: state.activeTableIndex + 1,
+                    // // 更新选中表格索引
+                    activeTableKey,
+                    // 更新当前表格头部内容 [!废弃] 2023-4-27
+                    // tableColumns,
+                    // 更新当前表格内容 [!废弃] 2023-4-27
+                    // tableData,
+                    activeTableData: {
+                        dbName:'新建查询',
+                        tableName:'',
+                        primaryKeyData:[]
+                    }
+                }
+            })
+        } else {
+            // const [tableColumnsSource, tableDataSource] = responseList
+            const tableColumnsSource = responseList[0].dataList
+            const tableDataSource = responseList[1].dataList
+
             console.log(tableColumnsSource, tableDataSource)
             // 处理表格头部格式
             const tableColumns = tableColumnsSource.map((item: any) => {
@@ -217,7 +269,6 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             const tableData = tableDataSource.map((item: any, index: number) => {
                 return { ...item, __key__: index } // 设置表格每行的 key 为 __key__ 意指：隐藏此字段，并尽可能不要使用该字段，防止与数据库中的数据冲突，
             })
-
             let newTab = {
                 key: activeTableKey,
                 activeRowIndex: [],
@@ -234,9 +285,8 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                 tableName,
                 // children: 
             }
-
+    
             const primaryKeyData = tableColumnsSource.filter((item: DBTable.TableDataItem) => item.Key === 'PRI')
-
             setState({
                 type: 'updateMutiData',
                 payload: {
@@ -260,9 +310,8 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     }
                 }
             })
-
-        })
-
+        }
+        return activeTableKey;
     }
 
     /**
@@ -287,7 +336,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             },
         ]
         requestGoCommon(reqData).then(responseList => {
-            const [tableResData] = responseList
+            const tableResData = responseList[0].dataList
             // 给数据指定key值
             const tableData = tableResData.map((item: any, index: number) => {
                 return { ...item, __key__: index }
@@ -891,7 +940,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     </Form>
                 </div>
             </Modal>
-            <DBTableStructureModal ref={DBTabStructureRef} showModalFlag={true}/>
+            <DBTableStructureModal ref={DBTabStructureRef} showModalFlag={true} structureData={getActiveTabHandle()?.tableColumnsSource}/>
             <Row className='tab_header' align='middle'>
                 <Col span={20}>
                     <Row align='middle'>
@@ -926,7 +975,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                 {
                     getActiveTabHandle()?.newQuerySQL && <div className='sql_editor'>
                         <SQLMonacoEditor
-                            editorReadOnly={true}
+                            // editorReadOnly={true}
                             value={getActiveTabHandle()?.QuerySQL}
                             hintData={hintDBData}
                         />
