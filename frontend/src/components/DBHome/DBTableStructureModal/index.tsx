@@ -13,7 +13,8 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
     console.log(props)
     const { showModalFlag, structureData } = props;
     const [showModal, setShowModal] = useState<boolean>(false);
-    const [editIndex,setEditIndex] = useState<number>(-1)
+    const [editIndex,setEditIndex] = useState<number>(-1);
+    const [editRowData,setEditRowData] = useState<any>({});
     const structureColumns=[
         {
             title: '字段名',
@@ -24,7 +25,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
                 // console.log(text,record,index)
                 return (
                     <Form.Item name={['table', index,"Field"]}>
-                        <Input disabled={editIndex !== index} placeholder="" defaultValue={text}/>
+                        <Input readOnly={editIndex !== index} placeholder="" defaultValue={editIndex !== index ? text : editRowData['Field']}/>
                     </Form.Item>
                 )
             }
@@ -36,7 +37,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     <Form.Item name={['table', index, "Type"]}>
-                        <Input disabled={editIndex !== index} placeholder="" defaultValue={text}/>
+                        <Input readOnly={editIndex !== index} placeholder="" defaultValue={editIndex !== index ? text : editRowData['Type']}/>
                     </Form.Item>
                 )
             }
@@ -48,7 +49,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     <Form.Item name={['table', index, "Null"]}>
-                        <Checkbox disabled={editIndex !== index} onChange={()=>onChangeEvent(index,"Null",text==="NO" ? "YES":"NO")} defaultChecked={text === "NO"}></Checkbox>
+                        <Checkbox disabled={editIndex !== index} onChange={()=>onChangeEvent(index,"Null",text==="NO" ? "YES":"NO")} defaultChecked={(editIndex !== index ? text : editRowData['Null']) === "NO"}></Checkbox>
                         {/* <Input placeholder=""  defaultValue={text}/> */}
                     </Form.Item>
                 )
@@ -61,7 +62,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     <Form.Item name={['table', index, "Key"]}>
-                        <Checkbox disabled={editIndex !== index} onChange={()=>onChangeEvent(index,"Key",text==="PRI" ? "":"PRI")} defaultChecked={text === "PRI"}>🔑</Checkbox>
+                        <Checkbox disabled={editIndex !== index} onChange={()=>onChangeEvent(index,"Key",text==="PRI" ? "":"PRI")} defaultChecked={(editIndex !== index ? text : editRowData['Key']) === "PRI"}>🔑</Checkbox>
                         {/* <Input placeholder="" defaultValue={text}/> */}
                     </Form.Item>
                 )
@@ -74,7 +75,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     <Form.Item name={['table', index, "Extra"]}>
-                        <Checkbox disabled={editIndex !== index} onChange={()=>onChangeEvent(index,"Extra",text==="auto_increment" ? "":"auto_increment")} defaultChecked={text === "auto_increment"}>自增</Checkbox>
+                        <Checkbox disabled={editIndex !== index} onChange={()=>onChangeEvent(index,"Extra",text==="auto_increment" ? "":"auto_increment")} defaultChecked={(editIndex !== index ? text : editRowData['Extra']) === "auto_increment"}>自增</Checkbox>
                         {/* <Input placeholder="" defaultValue={text}/> */}
                     </Form.Item>
                 )
@@ -114,7 +115,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
                             <Button size="small" type='default' shape='circle' onClick={()=>{setEditIndex(-1)}}><RollbackOutlined /></Button>
                         </Tooltip>
                     </Space> : <Space>
-                        <Button size="small" type='default' onClick={()=>{setEditIndex(index)}}>编辑</Button>
+                        <Button size="small" type='default' onClick={()=>{setEditIndex(index);setEditRowData(readyStructureData[index])}}>编辑</Button>
                     </Space>
                     // <Form.Item name={['table', index, "Extra"]}>
                     //     <Checkbox disabled={editIndex !== index} defaultChecked={text === "auto_increment"}>自增</Checkbox>
@@ -194,57 +195,6 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             layout="vertical"
             style={{height: '500px',overflow: 'auto'}}
         >
-            {/* <Form.Item label="Username">
-                <Space>
-                    <Form.Item
-                        name="username"
-                        noStyle
-                        rules={[{ required: true, message: 'Username is required' }]}
-                    >
-                        <Input style={{ width: 160 }} placeholder="Please input" />
-                    </Form.Item>
-                    <Tooltip title="Useful information">
-                        <Typography.Link href="#API">Need Help?</Typography.Link>
-                    </Tooltip>
-                </Space>
-            </Form.Item>
-            <Form.Item label="Address">
-                <Space.Compact>
-                    <Form.Item
-                        name={['address', 'province']}
-                        noStyle
-                        rules={[{ required: true, message: 'Province is required' }]}
-                    >
-                        <Select placeholder="Select province">
-                            <Select.Option value="Zhejiang">Zhejiang</Select.Option>
-                            <Select.Option value="Jiangsu">Jiangsu</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        name={['address', 'street']}
-                        noStyle
-                        rules={[{ required: true, message: 'Street is required' }]}
-                    >
-                        <Input style={{ width: '50%' }} placeholder="Input street" />
-                    </Form.Item>
-                </Space.Compact>
-            </Form.Item>
-            <Form.Item label="BirthDate" style={{ marginBottom: 0 }}>
-                <Form.Item
-                    name="year"
-                    rules={[{ required: true }]}
-                    style={{ display: 'inline-block', width: 'calc(50% - 8px)' }}
-                >
-                    <Input placeholder="Input birth year" />
-                </Form.Item>
-                <Form.Item
-                    name="month"
-                    rules={[{ required: true }]}
-                    style={{ display: 'inline-block', width: 'calc(50% - 8px)', margin: '0 8px' }}
-                >
-                    <Input placeholder="Input birth month" />
-                </Form.Item>
-            </Form.Item> */}
             <Form.Item name="table" valuePropName='dataSource'>
                 <Table className='structure_table' columns={structureColumns} bordered pagination={false}/>
             </Form.Item>
