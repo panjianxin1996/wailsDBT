@@ -192,6 +192,11 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         })
     }
 
+    /**
+     * 创建一个新tab标签页
+     * @param newTable 创建新标签数据
+     * @returns 
+     */
     function insertNewTable (newTable:any):string {
         const {responseList,dbName,tableName,newQuerySQL,tableStructureSQL,QuerySQL} = newTable
         // 指定默认选中为当前创建的标签
@@ -312,6 +317,23 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             })
         }
         return activeTableKey;
+    }
+
+    function updateTableStructureData ():void {
+        let tabHandle = getActiveTabHandle()!
+        let reqData: RequestGo.RequestGoData[] = [
+            {
+                operType: operationTypes.DB_OPERATION,
+                connDBId,
+                data: {
+                    type: dbOperationTypes.CUSTOM_SQL,
+                    customSQL: tabHandle.tableStructureSQL
+                }
+            }
+        ]
+        requestGoCommon(reqData).then(responseList => {
+            
+        })
     }
 
     /**
@@ -940,7 +962,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     </Form>
                 </div>
             </Modal>
-            <DBTableStructureModal ref={DBTabStructureRef} showModalFlag={true} structureData={getActiveTabHandle()?.tableColumnsSource}/>
+            <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} showModalFlag={true} structureData={getActiveTabHandle()?.tableColumnsSource}/>
             <Row className='tab_header' align='middle'>
                 <Col span={20}>
                     <Row align='middle'>
