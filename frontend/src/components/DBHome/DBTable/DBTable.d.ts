@@ -23,7 +23,8 @@ export namespace DBTable {
         // tableColumns: ColumnsType<TableDataItem>; // 表格头数据 [!废弃] 2023-4-27
         // tableData: TableDataItem[]; // 表格数据 [!废弃] 2023-4-27
         modalView: ModalView; // 弹框信息 
-        messageList: MessageList[], // 消息列表
+        messageList: MessageList[]; // 消息列表
+        customQuerySQL: string;
     }
 
     /**
@@ -99,6 +100,25 @@ export namespace DBTable {
         tableName?: string; // 表名
         newQuerySQL?: boolean; // 自定义SQL Flag
         querySQLStr?: string // 自定义SQL
+    }
+
+    /**
+     * 新tab所需要的参数
+     */
+    interface NewTable {
+        responseList?: any[];
+        dbName?: string;
+        tableName?: string;
+        newQuerySQL?: boolean;
+        tableStructureSQL?: string;
+        QuerySQL?: string;
+        tabData?: TabData
+    }
+
+    interface TabData {
+        tableDataSource: TableDataItem[];
+        tableColumns: ColumnsType<TableDataItem>;
+        tableData: TableDataItem[];
     }
     
 }

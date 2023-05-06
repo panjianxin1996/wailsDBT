@@ -6,7 +6,9 @@ import {
     MinusCircleOutlined,
     RedoOutlined,
     CloseOutlined,
-    ExclamationCircleOutlined
+    ExclamationCircleOutlined,
+    PlayCircleOutlined,
+    DatabaseOutlined
 
 } from '@ant-design/icons'
 import SQLMonacoEditor from "../../../components/Monaco/index"
@@ -15,6 +17,7 @@ import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo } from '..
 import plantImg from '../../../assets/images/plant.png'
 import './index.scss'
 import type { DBTable } from "./DBTable"
+import { ColumnsType } from 'antd/es/table'
 
 const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref) => {
     const { connDBId, hintDBData } = props
@@ -34,6 +37,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             showFlag: false
         },
         messageList: [],
+        customQuerySQL: ''
     }
 
     const [state, setState] = useReducer(dbReducer, initalState);
@@ -105,6 +109,11 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     ...state,
                     messageList: action.payload.messageList
                 }
+            case "changeCustomQuerySQL":
+                return {
+                    ...state,
+                    customQuerySQL: action.payload.customQuerySQL
+                }
             default:
                 return state
         }
@@ -140,8 +149,17 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
      */
     function initCustomTable (params: DBTable.CreateTabParams):void {
         const {querySQLStr,newQuerySQL} = params
-        const newTabKey = insertNewTable({newQuerySQL,QuerySQL:querySQLStr})
+        
         // const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
+        if (!querySQLStr) {
+            return
+        }
+        setState({
+            type: 'changeCustomQuerySQL',
+            payload: {
+                customQuerySQL: querySQLStr
+            }
+        })
         let reqData: RequestGo.RequestGoData[] = [
             {
                 operType: operationTypes.DB_OPERATION,
@@ -154,7 +172,40 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         ]
         // console.log(querySQLStr)
         requestGoCommon(reqData).then(responseList => {
-            console.log(responseList)
+            const [backData] = responseList;
+            if (backData.code === 1) {
+                const tableDataSource = backData.dataList;
+                const tableData = tableDataSource.map((item:any,index:number)=>{return {...item,__key__:index}});
+                let tableColumns:ColumnsType<DBTable.TableDataItem>;
+                // 处理表格头部格式
+                if (tableDataSource.length>0) {
+                    tableColumns = Object.keys(tableDataSource[0]).map((item: any) => {
+                        return {
+                            title: item,
+                            dataIndex: item,
+                            key: item,
+                            width: 200,
+                            textWrap: 'word-break',
+                            ellipsis: true,
+                            onCell: () => { // 处理最大文本长度，超出隐藏
+                                return {
+                                    style: {
+                                        maxWidth: 200,
+                                        overflow: 'hidden',
+                                        whiteSpace: 'nowrap',
+                                        textOverflow: 'ellipsis',
+                                        cursor: 'pointer'
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    const newTabKey = insertNewTable({newQuerySQL,QuerySQL:querySQLStr,tabData: {tableDataSource,tableColumns,tableData}})
+                }
+                // console.log()
+                
+                
+            }
             
         })
     }
@@ -197,8 +248,8 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
      * @param newTable 创建新标签数据
      * @returns 
      */
-    function insertNewTable (newTable:any):string {
-        const {responseList,dbName,tableName,newQuerySQL,tableStructureSQL,QuerySQL} = newTable
+    function insertNewTable (newTable:DBTable.NewTable):string {
+        const {responseList,dbName,tableName,newQuerySQL,tableStructureSQL,QuerySQL,tabData} = newTable
         // 指定默认选中为当前创建的标签
         let activeTableKey: string = tableKeyword + (state.activeTableIndex).toString()
         // 结构接口返回数据
@@ -211,9 +262,9 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                 tableStructureSQL:'',
                 QuerySQL,
                 tableColumnsSource: [],
-                tableDataSource:[],
-                tableColumns:[],
-                tableData:[],
+                tableDataSource:tabData?.tableDataSource,
+                tableColumns:tabData?.tableColumns,
+                tableData:tabData?.tableData,
                 label: "新建查询",
                 dbName:'新建查询',
                 tableName:'',
@@ -244,8 +295,8 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             })
         } else {
             // const [tableColumnsSource, tableDataSource] = responseList
-            const tableColumnsSource = responseList[0].dataList
-            const tableDataSource = responseList[1].dataList
+            const tableColumnsSource = responseList![0].dataList
+            const tableDataSource = responseList![1].dataList
 
             console.log(tableColumnsSource, tableDataSource)
             // 处理表格头部格式
@@ -319,7 +370,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         return activeTableKey;
     }
 
-    function updateTableStructureData ():void {
+    function UpdateTableStructureData ():void {
         let tabHandle = getActiveTabHandle()!
         let reqData: RequestGo.RequestGoData[] = [
             {
@@ -332,7 +383,44 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             }
         ]
         requestGoCommon(reqData).then(responseList => {
-            
+            const {tableObjectArray,activeTableKey} = state
+            const [backData] = responseList
+            const tableColumnsSource = backData.dataList
+            // console.log(responseList)
+            // 处理表格头部格式
+            const tableColumns = tableColumnsSource.map((item: any) => {
+                return {
+                    title: item.Field,
+                    dataIndex: item.Field,
+                    key: item.Field,
+                    width: 200,
+                    textWrap: 'word-break',
+                    ellipsis: true,
+                    onCell: () => { // 处理最大文本长度，超出隐藏
+                        return {
+                            style: {
+                                maxWidth: 200,
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                cursor: 'pointer'
+                            }
+                        }
+                    }
+                }
+            })
+            const primaryKeyData = tableColumnsSource.filter((item: DBTable.TableDataItem) => item.Key === 'PRI')
+            const activeRowData = {
+                ...getActiveTabHandle()!.activeRowData,
+                primaryKeyData
+            }
+            const newTableObjectArray = tableObjectArray.map(item => item.key === activeTableKey ? { ...item, tableColumnsSource, tableColumns,activeRowData} : item)
+            setState({
+                type: 'updateTableObjectData',
+                payload: {
+                    tableObjectArray: newTableObjectArray
+                }
+            })
         })
     }
 
@@ -587,7 +675,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         requestGoCommon(reqData).then(responseList => {
             const [backData] = responseList
             if (backData.code === 1) {
-                addMessage({
+                AddMessage({
                     type: 'success',
                     content: `记录修改成功！影响行数${backData.affectCount}`,
                 })
@@ -597,7 +685,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                 // 更新表格
                 // addTableData({ formData, insertId: backData.insertId, dbName, tableName, PRILIST:backData.insertId })
             } else {
-                addMessage({
+                AddMessage({
                     type: 'error',
                     duration: 0,
                     content: backData.errorMsg
@@ -775,14 +863,14 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             const [backData] = responseList
             // console.log(backData)
             if (backData.code === 1) {
-                addMessage({
+                AddMessage({
                     type: 'success',
                     content: `记录修改成功！影响行数${backData.affectCount}`,
                 })
                 // 更新表格
                 updateTableData(formData)
             } else {
-                addMessage({
+                AddMessage({
                     type: 'error',
                     duration: 0,
                     content: backData.errorMsg
@@ -836,6 +924,70 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         // console.log(tmpTableDataSource,tmpTableData)
     }
 
+    function newQuerySQLRunEvent () {
+        // 执行自定义查询
+        console.log(state.customQuerySQL)
+        if (!state.customQuerySQL) {
+            return;
+        }
+        let reqData: RequestGo.RequestGoData[] = [{
+            operType: operationTypes.DB_OPERATION,
+            connDBId,
+            data: {
+                type: dbOperationTypes.CUSTOM_SQL,
+                customSQL: state.customQuerySQL
+            }
+        }]
+        requestGoCommon(reqData).then(responseList => {
+            // console.log(responseList)
+            const [backData] = responseList;
+            if (backData.code === 1) {
+                const tableDataSource = backData.dataList;
+                let tableColumns:ColumnsType<DBTable.TableDataItem>;
+                // 处理表格头部格式
+                if (tableDataSource.length>0) {
+                    tableColumns = Object.keys(tableDataSource[0]).map((item: any) => {
+                        return {
+                            title: item,
+                            dataIndex: item,
+                            key: item,
+                            width: 200,
+                            textWrap: 'word-break',
+                            ellipsis: true,
+                            onCell: () => { // 处理最大文本长度，超出隐藏
+                                return {
+                                    style: {
+                                        maxWidth: 200,
+                                        overflow: 'hidden',
+                                        whiteSpace: 'nowrap',
+                                        textOverflow: 'ellipsis',
+                                        cursor: 'pointer'
+                                    }
+                                }
+                            }
+                        }
+                    })
+                }
+                // console.log()
+                const tableData = tableDataSource.map((item:any,index:number)=>{return {...item,__key__:index}});
+                const newTableObjArray = state.tableObjectArray.map((item:DBTable.tableObject)=>{return item.key === state.activeTableKey ? {...item,tableDataSource,tableData,tableColumns} : item});
+                setState({
+                    type: 'updateTableObjectData',
+                    payload: {
+                        tableObjectArray: newTableObjArray
+                    }
+                });
+            }
+            // state.tableObjectArray.map()
+            // setState({
+            //     type: 'updateTableObjectData',
+            //     payload: {
+
+            //     }
+            // })
+        })
+    }
+
     /**
      * 新增一行数据 发起数据库操作
      * @param formData 
@@ -874,7 +1026,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             const [backData] = responseList
             // console.log(backData)
             if (backData.code === 1) {
-                addMessage({
+                AddMessage({
                     type: 'success',
                     content: `记录修改成功！影响行数${backData.affectCount}`,
                 })
@@ -883,7 +1035,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                 // 更新表格
                 // addTableData({ formData, insertId: backData.insertId, dbName, tableName, PRILIST:backData.insertId })
             } else {
-                addMessage({
+                AddMessage({
                     type: 'error',
                     duration: 0,
                     content: backData.errorMsg
@@ -897,7 +1049,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
      * @param addMessageData 
      * @returns void
      */
-    function addMessage(addMessageData: DBTable.MessageList): void {
+    function AddMessage(addMessageData: DBTable.MessageList): void {
         const { type, content, duration = 3 } = addMessageData
         const key = "messageItem_" + state.messageList.length.toString()
         const newMessage = { key, type, content, duration }
@@ -962,7 +1114,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     </Form>
                 </div>
             </Modal>
-            <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} showModalFlag={true} structureData={getActiveTabHandle()?.tableColumnsSource}/>
+            <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} structureData={getActiveTabHandle()?.tableColumnsSource} UpdateTableStructureData={UpdateTableStructureData} AddMessage={AddMessage}/>
             <Row className='tab_header' align='middle'>
                 <Col span={20}>
                     <Row align='middle'>
@@ -971,7 +1123,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                         </Col>
                         <Col>
                             <p className='header_title'>
-                                <Tag className='title_db_name' color="#108ee9">{state.activeTableData?.dbName}</Tag>
+                                <Tag icon={<DatabaseOutlined />} color='#2db7f5' className='title_db_name' >{state.activeTableData?.dbName}</Tag>
                                 {/* <span className='title_db_name'>{state.activeData?.dbName}</span> */}
                                 <span className='title_table_name'>{state.activeTableData?.tableName}</span>
                             </p>
@@ -980,7 +1132,9 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                 </Col>
                 <Col span={4}>
                     {/* <Button onClick={addTable}>新建查询</Button> */}
-                    <Button type="primary" onClick={()=>{ DBTabStructureRef.current?.ToggleModalEvent() }}>编辑表结构</Button>
+                    {
+                        !getActiveTabHandle()?.newQuerySQL && <Button type="primary" onClick={()=>{ DBTabStructureRef.current?.ToggleModalEvent() }}>编辑表结构</Button>
+                    }
                 </Col>
             </Row>
             {/* 表标签页 */}
@@ -996,8 +1150,13 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
             <div>
                 {
                     getActiveTabHandle()?.newQuerySQL && <div className='sql_editor'>
+                        <p style={{textAlign: "right"}}>
+                            <Button type="primary" size="small" onClick={newQuerySQLRunEvent}><PlayCircleOutlined />运行</Button>
+                        </p>
+                        
                         <SQLMonacoEditor
                             // editorReadOnly={true}
+                            onChange={(val)=>{setState({type: 'changeCustomQuerySQL',payload: {customQuerySQL: val}})}}
                             value={getActiveTabHandle()?.QuerySQL}
                             hintData={hintDBData}
                         />
@@ -1037,17 +1196,20 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     dataSource={getActiveTabHandle()?.tableData} />
             </div>
             {/* 底部操作栏 */}
-            <div className='table_footer'>
-                <div className='operation_box'>
-                    <Space wrap>
-                        <Button type="primary" shape="round" icon={<EditOutlined />} size='small' onClick={editRecordBtnEvent}>修改记录</Button>
-                        <Button type="primary" shape="round" icon={<PlusCircleOutlined />} size='small' onClick={addRecordBtnEvent}>新增记录</Button>
-                        <Button type="primary" shape="round" icon={<MinusCircleOutlined />} size='small' onClick={delRecordBtnEvent}>删除记录</Button>
-                        <Button type="primary" shape="round" icon={<RedoOutlined />} size='small' onClick={reloadCurrentTableBtnEvent}>刷新</Button>
-                    </Space>
+            {
+                !getActiveTabHandle()?.newQuerySQL && <div className='table_footer'>
+                    <div className='operation_box'>
+                        <Space wrap>
+                            <Button type="primary" shape="round" icon={<EditOutlined />} size='small' onClick={editRecordBtnEvent}>修改记录</Button>
+                            <Button type="primary" shape="round" icon={<PlusCircleOutlined />} size='small' onClick={addRecordBtnEvent}>新增记录</Button>
+                            <Button type="primary" shape="round" icon={<MinusCircleOutlined />} size='small' onClick={delRecordBtnEvent}>删除记录</Button>
+                            <Button type="primary" shape="round" icon={<RedoOutlined />} size='small' onClick={reloadCurrentTableBtnEvent}>刷新</Button>
+                        </Space>
+                    </div>
+                    <div className='query_SQL_box'>{getActiveTabHandle()?.QuerySQL}</div>
                 </div>
-                <div className='query_SQL_box'>{getActiveTabHandle()?.QuerySQL}</div>
-            </div>
+            }
+            
         </div>
         :
         // 欢迎界面

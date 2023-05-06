@@ -5,7 +5,8 @@ export namespace monacoEditor {
         language?: string,
         value?: string,
         hintData?: Hints,
-        editorReadOnly?: boolean
+        editorReadOnly?: boolean;
+        onChange:(value:string)=>void
     }
 
     interface Hints {

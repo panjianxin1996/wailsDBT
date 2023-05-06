@@ -66,7 +66,7 @@ loader.init().then(/* ... */);
 
 const SQLMonacoEditor: React.FC<monacoEditor.Props> = (props: monacoEditor.Props) => {
 
-    const { width, height, value, language, hintData = {},editorReadOnly = false } = props
+    const { width, height, value, language, hintData = {},editorReadOnly = false,onChange } = props
 
     const [editorValue, setEditorValue] = useState<string>(value ? value : '')
 
@@ -168,7 +168,7 @@ const SQLMonacoEditor: React.FC<monacoEditor.Props> = (props: monacoEditor.Props
         value={editorValue}
         defaultLanguage={language ? language : 'sql'}
         theme='light'
-        onChange={(value) => { value && setEditorValue(value) }}
+        onChange={(value) => { value && setEditorValue(value);onChange(value!) }}
         options={{
             readOnly: editorReadOnly,
             minimap: { enabled: false } //关闭右边小地图
