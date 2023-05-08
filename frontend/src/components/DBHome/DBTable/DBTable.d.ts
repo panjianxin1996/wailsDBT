@@ -6,6 +6,11 @@ export namespace DBTable {
     interface Props {
         hintDBData: monacoEditor.Hints; // 编辑器输入提示数据集
         connDBId: string; // 连接的数据库句柄
+        /**
+         * 暴露给子组件刷新数据库下的表 源方法：DBHome
+         * @returns 
+         */
+        RealoadData: ()=>void
     }
 
     interface ShowDBTableRef {

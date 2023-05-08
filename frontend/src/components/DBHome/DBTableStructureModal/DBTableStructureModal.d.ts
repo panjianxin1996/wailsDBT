@@ -30,6 +30,11 @@ export namespace DBTabStructure {
          * @returns 
          */
         AddMessage:(msg:DBTable.MessageList)=>void;
+        /**
+         * 暴露给子组件刷新数据库下的表 源方法：DBHome
+         * @returns 
+         */
+        RealoadData:()=>void;
     }
 
     interface DBTabStructureRef {

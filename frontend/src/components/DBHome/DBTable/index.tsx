@@ -20,7 +20,7 @@ import type { DBTable } from "./DBTable"
 import { ColumnsType } from 'antd/es/table'
 
 const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref) => {
-    const { connDBId, hintDBData } = props
+    const { connDBId, hintDBData,RealoadData } = props
 
     const tableKeyword = 'tab_'
 
@@ -49,7 +49,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
 
     useImperativeHandle(
         ref,
-        () => ({ CreateTable, state })
+        () => ({ CreateTable, UpdateTable, state })
     )
     /**
      * useReducer dispath集合 主要涉及state里面内容的操作，包括增删改
@@ -121,10 +121,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
 
     /**
      * 暴露创建tab的方法
-     * @param dbName 数据库名
-     * @param tableName 表名
-     * @param newQuerySQL 是否自定义sql语句flag boolean
-     * @param querySQLStr 自定义sql语句
+     * @param params 创建table的参数
      * @returns void
      */
     function CreateTable(params: DBTable.CreateTabParams): void {
@@ -144,6 +141,135 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
     }
 
     /**
+     * 暴露方法给外界使用 更新当前选中表的信息
+     * @param params 更新table的参数
+     */
+    function UpdateTable(params: DBTable.CreateTabParams):void {
+        const {dbName,tableName} = params
+        const tableStructureSQL = `DESCRIBE ${dbName}.${tableName}`
+        const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
+        let reqData: RequestGo.RequestGoData[] = [
+            {
+                operType: operationTypes.DB_OPERATION,
+                connDBId,
+                data: {
+                    type: dbOperationTypes.CUSTOM_SQL,
+                    customSQL: tableStructureSQL
+                }
+            },
+            {
+                operType: operationTypes.DB_OPERATION,
+                connDBId,
+                data: {
+                    type: dbOperationTypes.CUSTOM_SQL,
+                    customSQL: QuerySQL
+                }
+            },
+        ]
+        // 通过Promise.all 进行多接口请求并渲染表格头部、内容、tab的数据
+        requestGoCommon(reqData).then(responseList => {
+            const tableColumnsSource = responseList![0].dataList
+            const tableDataSource = responseList![1].dataList
+
+            // console.log(tableColumnsSource, tableDataSource)
+            // 处理表格头部格式
+            const tableColumns = tableColumnsSource.map((item: any) => {
+                return {
+                    title: item.Field,
+                    dataIndex: item.Field,
+                    key: item.Field,
+                    width: 200,
+                    textWrap: 'word-break',
+                    ellipsis: true,
+                    onCell: () => { // 处理最大文本长度，超出隐藏
+                        return {
+                            style: {
+                                maxWidth: 200,
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                cursor: 'pointer'
+                            }
+                        }
+                    }
+                }
+            })
+            // 给table数据设置key值
+            const tableData = tableDataSource.map((item: any, index: number) => {
+                return { ...item, __key__: index } // 设置表格每行的 key 为 __key__ 意指：隐藏此字段，并尽可能不要使用该字段，防止与数据库中的数据冲突，
+            })
+            // let newTab = {
+            //     key: activeTableKey,
+            //     activeRowIndex: [],
+            //     activeRowData: [],
+            //     newQuerySQL,
+            //     tableStructureSQL,
+            //     QuerySQL,
+            //     tableColumnsSource,
+            //     tableDataSource,
+            //     tableColumns,
+            //     tableData,
+            //     label: tableName,
+            //     dbName,
+            //     tableName,
+            //     // children: 
+            // }
+    
+            const primaryKeyData = tableColumnsSource.filter((item: DBTable.TableDataItem) => item.Key === 'PRI')
+            const newTableObjectArray = state.tableObjectArray.map((item)=>{
+                if (item.key === state.activeTableKey) {
+                    return {
+                        ...item,
+                        // activeRowIndex: [],
+                        // activeRowData: [],
+                        // newQuerySQL,
+                        tableStructureSQL,
+                        QuerySQL,
+                        tableColumnsSource,
+                        tableDataSource,
+                        tableColumns,
+                        tableData,
+                        label: tableName,
+                        dbName,
+                        tableName,
+                    }
+                } else {
+                    return item
+                }
+            })
+            setState({
+                type: 'updateTableObjectData',
+                payload: {
+                    tableObjectArray: newTableObjectArray
+                }
+            })
+            // setState({
+            //     type: 'updateMutiData',
+            //     payload: {
+            //         // 更新表格表对象数组数据
+            //         tableObjectArray: [
+            //             ...state.tableObjectArray,
+            //             newTab
+            //         ],
+            //         // 更新表格索引
+            //         activeTableIndex: state.activeTableIndex + 1,
+            //         // // 更新选中表格索引
+            //         activeTableKey,
+            //         // 更新当前表格头部内容 [!废弃] 2023-4-27
+            //         // tableColumns,
+            //         // 更新当前表格内容 [!废弃] 2023-4-27
+            //         // tableData,
+            //         activeTableData: {
+            //             dbName,
+            //             tableName,
+            //             primaryKeyData
+            //         }
+            //     }
+            // })
+        })
+    }
+
+    /**
      * 按照用户输入的sql命令进行创建tab页
      * @param params DBTable.CreateTabParams
      */
@@ -151,9 +277,11 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
         const {querySQLStr,newQuerySQL} = params
         
         // const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
-        if (!querySQLStr) {
+        if (!querySQLStr) { // 创建空白模板已提供用户自定义sql语句
+            insertNewTable({newQuerySQL,QuerySQL:querySQLStr,tabData: {tableDataSource:[],tableColumns:[],tableData:[]}})
             return
         }
+        // console.log(querySQLStr,newQuerySQL)
         setState({
             type: 'changeCustomQuerySQL',
             payload: {
@@ -202,9 +330,8 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     })
                     const newTabKey = insertNewTable({newQuerySQL,QuerySQL:querySQLStr,tabData: {tableDataSource,tableColumns,tableData}})
                 }
-                // console.log()
-                
-                
+            } else { // 不管sql失败与否都要创建新tab，失败则创建空白模板
+                insertNewTable({newQuerySQL,QuerySQL:querySQLStr,tabData: {tableDataSource:[],tableColumns:[],tableData:[]}})
             }
             
         })
@@ -1114,7 +1241,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef,DBTable.Props>((props, ref
                     </Form>
                 </div>
             </Modal>
-            <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} structureData={getActiveTabHandle()?.tableColumnsSource} UpdateTableStructureData={UpdateTableStructureData} AddMessage={AddMessage}/>
+            <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} structureData={getActiveTabHandle()?.tableColumnsSource} RealoadData={RealoadData} UpdateTableStructureData={UpdateTableStructureData} AddMessage={AddMessage}/>
             <Row className='tab_header' align='middle'>
                 <Col span={20}>
                     <Row align='middle'>

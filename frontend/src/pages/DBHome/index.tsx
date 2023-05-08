@@ -130,6 +130,17 @@ function DBHome() {
     }
 
     /**
+     * 暴露更新菜单列表数据 需要在修改表名的时候去更新
+     */
+    function RealoadData () {
+        onSelectDBListEvent(activeDBIndex)
+        const [dbName, tableName] = activeDBtable.split('/')
+        // ShowDBTableRef.current.dasda
+        // ShowDBTableRef.current?.UpdateTable({dbName, tableName})
+
+    }
+
+    /**
      * 这是一个获取当前选中数据库的所有表的请求，通过wails 传输参数并操作数据库
      * @param currentDB 当前数据库名称
      * @returns null
@@ -138,6 +149,7 @@ function DBHome() {
         if (currentDB === undefined) {
             return
         }
+        console.log("重新刷新")
         // 获取数据库里的表
         GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(res => {
             let result = res ? JSON.parse(res).dataList : []
@@ -221,7 +233,7 @@ function DBHome() {
                                 hintData={allDBState}
                             /> */}
                             {/* <button onClick={test}>test</button> */}
-                            <ShowDBTable ref={ShowDBTableRef} connDBId={connectId} hintDBData={allDBState} />
+                            <ShowDBTable RealoadData={RealoadData} ref={ShowDBTableRef} connDBId={connectId} hintDBData={allDBState} />
 
                         </div>
                     </Content>

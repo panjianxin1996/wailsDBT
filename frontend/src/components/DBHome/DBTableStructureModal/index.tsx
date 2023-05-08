@@ -1,5 +1,5 @@
 import { Button, Checkbox, Form, Input, Modal, Popconfirm, Select, Space, Table, Tooltip, Typography } from 'antd';
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
     CheckOutlined,
     CloseOutlined,
@@ -9,12 +9,13 @@ import {
 } from '@ant-design/icons'
 import type { DBTabStructure } from './DBTableStructureModal';
 import { useForm } from 'antd/es/form/Form';
-import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo,formatSQLSpecialChar } from '../../../utils/index'
+import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, formatSQLSpecialChar } from '../../../utils/index'
 import './index.scss';
 const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTabStructure.Props>((props, ref) => {
     // console.log(props)
-    const { structureData, structureInfo, connDBId, UpdateTableStructureData, AddMessage } = props;
-    const {dbName,tableName} = structureInfo;
+    const { structureData, structureInfo, connDBId, UpdateTableStructureData, AddMessage,RealoadData } = props;
+    const { dbName, tableName } = structureInfo;
+    const [editTabNameFlag, setEditTabNameFlag] = useState(false);
     const tableNameSQLStr = `${formatSQLSpecialChar(dbName!)}.${formatSQLSpecialChar(tableName!)}`;
     const [showModal, setShowModal] = useState<boolean>(false);
     const [editIndex, setEditIndex] = useState<number>(-1);
@@ -30,9 +31,9 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
                 // console.log(text,record,index)
                 return (
                     // <Form.Item name={['table', index, "Field"]}>
-                        // {
-                            editIndex !== index ? <span>{text}</span> : <Input readOnly={editIndex !== index} placeholder="" value={editRowData['Field']} onChange={(e) => onChangeEvent(index, "Field", e.target.value)} />
-                        // }
+                    // {
+                    editIndex !== index ? <span>{text}</span> : <Input readOnly={editIndex !== index} placeholder="" value={editRowData['Field']} onChange={(e) => onChangeEvent(index, "Field", e.target.value)} />
+                    // }
 
                     // </Form.Item>
                 )
@@ -46,7 +47,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
                 return (
                     // <Form.Item name={['table', index, "Type"]}>
                     //     {
-                            editIndex !== index ? <span>{text}</span> : <Input readOnly={editIndex !== index} placeholder="" value={editRowData['Type']} onChange={(e) => onChangeEvent(index, "Type", e.target.value)} />
+                    editIndex !== index ? <span>{text}</span> : <Input readOnly={editIndex !== index} placeholder="" value={editRowData['Type']} onChange={(e) => onChangeEvent(index, "Type", e.target.value)} />
                     //     }
                     // </Form.Item>
                 )
@@ -59,8 +60,8 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     // <Form.Item name={['table', index, "Null"]}>
-                        <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Null", editRowData['Null'] === "NO" ? "YES" : "NO")} checked={(editIndex !== index ? text : editRowData['Null']) === "NO"}></Checkbox>
-                        
+                    <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Null", editRowData['Null'] === "NO" ? "YES" : "NO")} checked={(editIndex !== index ? text : editRowData['Null']) === "NO"}></Checkbox>
+
                     // </Form.Item>
                 )
             }
@@ -72,7 +73,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     // <Form.Item name={['table', index, "Key"]}>
-                        <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Key", editRowData['Key'] === "PRI" ? "" : "PRI")} checked={(editIndex !== index ? text : editRowData['Key']) === "PRI"}>🔑</Checkbox>
+                    <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Key", editRowData['Key'] === "PRI" ? "" : "PRI")} checked={(editIndex !== index ? text : editRowData['Key']) === "PRI"}>🔑</Checkbox>
                     // </Form.Item>
                 )
             }
@@ -84,8 +85,8 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     // <Form.Item name={['table', index, "Extra"]}>
-                        <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Extra", editRowData['Extra'] === "auto_increment" ? "" : "auto_increment")} checked={(editIndex !== index ? text : editRowData['Extra']) === "auto_increment"}>自增</Checkbox>
-                       
+                    <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Extra", editRowData['Extra'] === "auto_increment" ? "" : "auto_increment")} checked={(editIndex !== index ? text : editRowData['Extra']) === "auto_increment"}>自增</Checkbox>
+
                     // </Form.Item>
                 )
             }
@@ -97,13 +98,13 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             render: (text: any, record: any, index: number) => {
                 return (
                     editIndex === index ? (editRowData['__new__'] ? <Space>
-                            <Tooltip title="保存" color="#108ee9">
-                                <Button size="small" type="primary" shape='circle' onClick={createTabColEvent}><SaveOutlined /></Button>
-                            </Tooltip>
-                            <Tooltip title="删除" color="volcano">
-                                <Button size="small" type="default" shape='circle' onClick={delNewTabColEvent}><CloseOutlined /></Button>
-                            </Tooltip>
-                        </Space>
+                        <Tooltip title="保存" color="#108ee9">
+                            <Button size="small" type="primary" shape='circle' onClick={createTabColEvent}><SaveOutlined /></Button>
+                        </Tooltip>
+                        <Tooltip title="删除" color="volcano">
+                            <Button size="small" type="default" shape='circle' onClick={delNewTabColEvent}><CloseOutlined /></Button>
+                        </Tooltip>
+                    </Space>
                         : <Space size="middle">
                             <Popconfirm
                                 title="修改此列信息"
@@ -140,6 +141,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
     ];
     const [readyStructureData, setReadyStructureData] = useState(structureData)
     const [structureForm] = useForm();
+    const editTabNameInput =useRef(null);
     useImperativeHandle(ref, () => ({
         ToggleModalEvent,
     }))
@@ -315,16 +317,16 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
     function newCreateRowEvent() {
         // setCreateRowFlag(true);
 
-        let newStructureData = [...readyStructureData, { Default: "", Extra: '', Field: '', Key: '', Null: 'YES', Type: '',__new__: true }]
+        let newStructureData = [...readyStructureData, { Default: "", Extra: '', Field: '', Key: '', Null: 'YES', Type: '', __new__: true }]
         setReadyStructureData(newStructureData);
-        setEditRowData({ Default: "", Extra: '', Field: '', Key: '', Null: 'YES', Type: '',__new__: true })
+        setEditRowData({ Default: "", Extra: '', Field: '', Key: '', Null: 'YES', Type: '', __new__: true })
         structureForm.setFieldsValue({
             table: newStructureData
         })
         setEditIndex(readyStructureData.length);
     }
 
-    function createTabColEvent () {
+    function createTabColEvent() {
         console.log(editRowData)
         // const { dbName, tableName, } = structureInfo
         console.log(readyStructureData[editIndex], editRowData)
@@ -367,21 +369,59 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
     /**
      * 逻辑上的删除，并不需要修改数据库数据
      */
-    function delNewTabColEvent () {
+    function delNewTabColEvent() {
         console.log(readyStructureData)
-        const newReadyStructureData = readyStructureData.filter((item:any)=>{return !item.__new__})
+        const newReadyStructureData = readyStructureData.filter((item: any) => { return !item.__new__ })
         setReadyStructureData(newReadyStructureData)
         structureForm.setFieldsValue({
             table: newReadyStructureData
         })
     }
 
-    function onFinishEvent(values: any): void {
-        console.log(values)
-        console.log(editRowData)
+    // function onFinishEvent(values: any): void {
+    //     console.log(values)
+    //     console.log(editRowData)
+    // }
+
+    /**
+     * 更新表名组件
+     * @returns React.ReactNode
+     */
+    function editTabNameNode():React.ReactNode {
+        return !editTabNameFlag ? <Space.Compact className='modal_title_box'><span>{tableName}</span><Button type="link" size="small" onClick={() => setEditTabNameFlag(true)}>编辑</Button></Space.Compact>
+            : <Space.Compact className='modal_title_box'><Input defaultValue={tableName} ref={editTabNameInput}></Input><Button type="primary" size="small" onClick={() => {editTabNameEvent()}}>确认</Button></Space.Compact>
     }
 
-    return <Modal width="1000px" title='表结构' open={showModal} onCancel={ToggleModalEvent} footer={false}>
+    function editTabNameEvent () {
+        setEditTabNameFlag(false)
+        let newTabName = (editTabNameInput.current as any).input.value
+        if (!newTabName) {
+            AddMessage({
+                type: 'warning',
+                duration: 1,
+                content: '表名不能为空！',
+            })
+            return;
+        }
+        const updateSQL = `ALTER TABLE ${tableNameSQLStr} RENAME TO ${formatSQLSpecialChar(dbName!)}.${formatSQLSpecialChar(newTabName)}`
+        console.log(updateSQL)
+
+        let reqData: RequestGo.RequestGoData[] = [{
+            operType: operationTypes.DB_OPERATION,
+            connDBId,
+            data: {
+                type: dbOperationTypes.EXEC_SQL,
+                execSQL: updateSQL
+            }
+        }]
+
+        requestGoCommon(reqData).then(responseList => {
+            console.log(responseList)
+            RealoadData()
+        })
+    }
+
+    return <Modal width="1000px" title={editTabNameNode()} open={showModal} onCancel={ToggleModalEvent} footer={false}>
         {/* <Form
             form={structureForm}
             onFinish={onFinishEvent}
@@ -389,17 +429,17 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             style={{ height: '500px', overflow: 'auto' }}
         >
             <Form.Item name="table" valuePropName='dataSource'> */}
-                <Table
-                    className='structure_table'
-                    columns={structureColumns}
-                    dataSource={readyStructureData}
-                    bordered
-                    pagination={false}
-                    footer={() => <p><Button block onClick={newCreateRowEvent}>新增一行新列</Button></p>} />
-            {/* </Form.Item> */}
-            <p>{JSON.stringify(readyStructureData)}</p>
-            <p>{JSON.stringify(editRowData)}</p>
-            {/* <Form.Item label=" " colon={false}>
+        <Table
+            className='structure_table'
+            columns={structureColumns}
+            dataSource={readyStructureData}
+            bordered
+            pagination={false}
+            footer={() => <p><Button block onClick={newCreateRowEvent}>新增一行新列</Button></p>} />
+        {/* </Form.Item> */}
+        <p>{JSON.stringify(readyStructureData)}</p>
+        <p>{JSON.stringify(editRowData)}</p>
+        {/* <Form.Item label=" " colon={false}>
                 <Button type="primary" htmlType="submit">提交</Button>
             </Form.Item> */}
         {/* </Form> */}
