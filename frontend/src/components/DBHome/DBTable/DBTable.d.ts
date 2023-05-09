@@ -2,21 +2,35 @@ import React, { ReactNode } from "react";
 import type { monacoEditor } from "../../Monaco";
 import type { ColumnsType } from 'antd/es/table';
 import type { NoticeType } from 'antd/es/message/interface'
+import {
+    GoMysqlDataBase,
+} from '../../DBHome'
 export namespace DBTable {
     interface Props {
-        hintDBData: monacoEditor.Hints; // 编辑器输入提示数据集
-        connDBId: string; // 连接的数据库句柄
+        /**
+         * 编辑器输入提示数据集
+         */ 
+        hintDBData: monacoEditor.Hints;
+        /**
+         * 连接的数据库句柄
+         */ 
+        connDBId: string; 
         /**
          * 暴露给子组件刷新数据库下的表 源方法：DBHome
          * @returns 
          */
-        RealoadData: ()=>void
+        RealoadData: (tableKey?: string)=>void;
+        /**
+         * 数据库列表
+         */
+        databases: GoMysqlDataBase[];
     }
 
     interface ShowDBTableRef {
         [x: string]: any;
         state: State,
         CreateTable: (params: DBTable.CreateTabParams)=>void
+        UpdateTable: (params: DBTable.CreateTabParams)=>void
     }
 
     interface State {

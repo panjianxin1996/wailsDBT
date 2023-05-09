@@ -7,35 +7,30 @@ import {
     SaveOutlined
 
 } from '@ant-design/icons'
-import type { DBTabStructure } from './DBTableStructureModal';
+import type { DBTabCreateTable } from './DBTableCreateTableModal';
 import { useForm } from 'antd/es/form/Form';
-import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, formatSQLSpecialChar } from '../../../utils/index'
+import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, formatSQLSpecialChar } from '../../../../utils/index'
+import {
+    GoMysqlDataBase,
+} from '../../../DBHome'
 import './index.scss';
-const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTabStructure.Props>((props, ref) => {
-    // console.log(props)
-    const { structureData, structureInfo, connDBId, UpdateTableStructureData, AddMessage,RealoadData } = props;
-    const { dbName, tableName } = structureInfo;
-    const [editTabNameFlag, setEditTabNameFlag] = useState(false);
-    const tableNameSQLStr = `${formatSQLSpecialChar(dbName!)}.${formatSQLSpecialChar(tableName!)}`;
+const DBTableCreateTableModal = forwardRef<DBTabCreateTable.DBTabCreateTableRef, DBTabCreateTable.Props>((props, ref) => {
+    const { structureData, connDBId, AddMessage,RealoadData,databases } = props;
+    // console.log(databases)
+    // const { dbName, tableName } = structureInfo;
+    const [activeDBName, setActiveDBName] = useState<string>();
+    // const tableNameSQLStr = `${formatSQLSpecialChar(dbName!)}.${formatSQLSpecialChar(tableName!)}`;
     const [showModal, setShowModal] = useState<boolean>(false);
     const [editIndex, setEditIndex] = useState<number>(-1);
     const [editRowData, setEditRowData] = useState<any>({});
-    // const [createRowFlag, setCreateRowFlag] = useState(false);
     const structureColumns = [
         {
             title: '字段名',
             dataIndex: "Field",
             key: "Field",
             render: (text: any, record: any, index: number) => {
-                // console.log(editIndex, index)
-                // console.log(text,record,index)
                 return (
-                    // <Form.Item name={['table', index, "Field"]}>
-                    // {
                     editIndex !== index ? <span>{text}</span> : <Input readOnly={editIndex !== index} placeholder="" value={editRowData['Field']} onChange={(e) => onChangeEvent(index, "Field", e.target.value)} />
-                    // }
-
-                    // </Form.Item>
                 )
             }
         },
@@ -45,11 +40,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             key: "Type",
             render: (text: any, record: any, index: number) => {
                 return (
-                    // <Form.Item name={['table', index, "Type"]}>
-                    //     {
                     editIndex !== index ? <span>{text}</span> : <Input readOnly={editIndex !== index} placeholder="" value={editRowData['Type']} onChange={(e) => onChangeEvent(index, "Type", e.target.value)} />
-                    //     }
-                    // </Form.Item>
                 )
             }
         },
@@ -59,10 +50,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             key: "Null",
             render: (text: any, record: any, index: number) => {
                 return (
-                    // <Form.Item name={['table', index, "Null"]}>
                     <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Null", editRowData['Null'] === "NO" ? "YES" : "NO")} checked={(editIndex !== index ? text : editRowData['Null']) === "NO"}></Checkbox>
-
-                    // </Form.Item>
                 )
             }
         },
@@ -72,9 +60,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             key: "Key",
             render: (text: any, record: any, index: number) => {
                 return (
-                    // <Form.Item name={['table', index, "Key"]}>
                     <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Key", editRowData['Key'] === "PRI" ? "" : "PRI")} checked={(editIndex !== index ? text : editRowData['Key']) === "PRI"}>🔑</Checkbox>
-                    // </Form.Item>
                 )
             }
         },
@@ -84,10 +70,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             key: "Extra",
             render: (text: any, record: any, index: number) => {
                 return (
-                    // <Form.Item name={['table', index, "Extra"]}>
                     <Checkbox disabled={editIndex !== index} onChange={() => onChangeEvent(index, "Extra", editRowData['Extra'] === "auto_increment" ? "" : "auto_increment")} checked={(editIndex !== index ? text : editRowData['Extra']) === "auto_increment"}>自增</Checkbox>
-
-                    // </Form.Item>
                 )
             }
         },
@@ -140,8 +123,9 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
         },
     ];
     const [readyStructureData, setReadyStructureData] = useState(structureData)
-    const [structureForm] = useForm();
-    const editTabNameInput =useRef(null);
+    // const [structureForm] = useForm();
+    // const selectInput =useRef(null);
+    const tabNameInput =useRef(null);
     useImperativeHandle(ref, () => ({
         ToggleModalEvent,
     }))
@@ -151,9 +135,9 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
 
     useEffect(() => {
         setReadyStructureData(structureData)
-        structureForm.setFieldsValue({
-            table: structureData
-        })
+        // structureForm.setFieldsValue({
+        //     table: structureData
+        // })
     }, [structureData])
 
     // useEffect(()=>{
@@ -178,11 +162,14 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
     //     // setStructureColumns()
     // },[readyStructureData])
 
+    /**
+     * 暴露出对当前组件展示或隐藏的方法，用于显示或隐藏当前组件
+     */
     function ToggleModalEvent(): void {
         // 每次进入需要重新设置表单里面的数据
-        structureForm.setFieldsValue({
-            table: structureData
-        })
+        // structureForm.setFieldsValue({
+        //     table: structureData
+        // })
         setEditIndex(-1)
         setShowModal(!showModal)
     }
@@ -206,92 +193,46 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
         // console.log('触发')
         setEditIndex(-1);
         // 取消修改后，需要重置原始表单数据
-        structureForm.setFieldsValue({
-            table: readyStructureData
-        });
+        // structureForm.setFieldsValue({
+        //     table: readyStructureData
+        // });
     }
 
+    /**
+     * 修改二次确认后的提交
+     */
     function onEditConfirm(): void {
-        // console.log("编辑！")
-        // const { dbName, tableName, } = structureInfo
-        // console.log(readyStructureData[editIndex], editRowData)
-        // const updateSQL = `ALTER TABLE ${dbName}.${tableName} RENAME COLUMN ${readyStructureData[editIndex].Field} TO ${editRowData.Field}`
-        // change语句：ALTER TABLE 表名 CHANGE 字段名 新字段名 新字段属性
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} CHANGE ${formatSQLSpecialChar(readyStructureData[editIndex].Field)} ${formatSQLSpecialChar(editRowData.Field)} ${editRowData.Type} ${editRowData.Key === 'PRI' ? 'PRIMARY KEY' : ''} ${editRowData.Null === 'NO' ? 'NOT NULL' : 'NULL'} ${editRowData.Extra}`
-        // console.log(updateSQL)
-
-        let reqData: RequestGo.RequestGoData[] = [{
-            operType: operationTypes.DB_OPERATION,
-            connDBId,
-            data: {
-                type: dbOperationTypes.EXEC_SQL,
-                execSQL: updateSQL
-            }
-        }]
-
-        requestGoCommon(reqData).then(responseList => {
-            // console.log(responseList)
-            const [backData] = responseList;
-            if (backData.code === 1) { // 执行成功触发父组件事件重新获取表结构
-                // UpdateTableStructureData
-                UpdateTableStructureData();
-                AddMessage({
-                    type: 'success',
-                    duration: 1,
-                    content: `修改字段成功`,
-                })
+        const newReadyStructureData = readyStructureData.map((item:any,index:number)=>{
+            if (index === editIndex) {
+                const {__new__,...otherItem} = editRowData //去除掉__new__
+                return otherItem
             } else {
-                AddMessage({
-                    type: 'error',
-                    duration: 0,
-                    content: backData.errorMsg,
-                })
+                return item
             }
+            
         })
+        setReadyStructureData(newReadyStructureData);
+        setEditIndex(-1);
     }
 
+    /**
+     * 删除二次确认后的提交
+     */
     function onDelConfirm(): void {
-        // console.log('删除')
-        // const { dbName, tableName, } = structureInfo
-        console.log(readyStructureData[editIndex], editRowData)
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} DROP COLUMN ${formatSQLSpecialChar(readyStructureData[editIndex].Field)}`
-        // console.log(updateSQL)
-
-        let reqData: RequestGo.RequestGoData[] = [{
-            operType: operationTypes.DB_OPERATION,
-            connDBId,
-            data: {
-                type: dbOperationTypes.EXEC_SQL,
-                execSQL: updateSQL
-            }
-        }]
-
-        requestGoCommon(reqData).then(responseList => {
-            // console.log(responseList)
-            const [backData] = responseList;
-            if (backData.code === 1) { // 执行成功触发父组件事件重新获取表结构
-                // UpdateTableStructureData
-                setEditIndex(-1);
-                UpdateTableStructureData();
-                AddMessage({
-                    type: 'success',
-                    duration: 1,
-                    content: `删除字段成功`,
-                })
-            } else {
-                AddMessage({
-                    type: 'error',
-                    duration: 0,
-                    content: backData.errorMsg,
-                })
-            }
-        })
+        const newReadyStructureData = readyStructureData.filter((item: any,index:number) => { return index!==editIndex })
+        setReadyStructureData(newReadyStructureData)
     }
 
     // function onChangeInputEvent (e) {
 
     // }
 
+    /**
+     * 修改选中需要修改行的数据 对应选中行数据editRowData
+     * @param index 索引：未使用
+     * @param key 键：对应的需要修改的键名
+     * @param value 值：对应需要修改的值数据
+     */
     function onChangeEvent(index: number, key: string, value: any): void {
         // console.log(key,value)
         let tmpItem = { ...editRowData }
@@ -314,68 +255,47 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
         // structureForm.setFieldValue('table',[{"Default":"","Extra":"auto_increment","Field":"test_id","Key":"PRI","Null":"YES","Type":"int(10) unsigned zerofill"},{"Default":"","Extra":"","Field":"t2_id","Key":"PRI","Null":"NO","Type":"int"},{"Default":"","Extra":"","Field":"name","Key":"","Null":"YES","Type":"varchar(255)"}])
     }
 
+    /**
+     * 在视图表中创建一行新数据用于给表中创建一行新列
+     */
     function newCreateRowEvent() {
         // setCreateRowFlag(true);
 
         let newStructureData = [...readyStructureData, { Default: "", Extra: '', Field: '', Key: '', Null: 'YES', Type: '', __new__: true }]
         setReadyStructureData(newStructureData);
         setEditRowData({ Default: "", Extra: '', Field: '', Key: '', Null: 'YES', Type: '', __new__: true })
-        structureForm.setFieldsValue({
-            table: newStructureData
-        })
+        // structureForm.setFieldsValue({
+        //     table: newStructureData
+        // })
         setEditIndex(readyStructureData.length);
     }
 
+    /**
+     * 创建表中一行新列
+     */
     function createTabColEvent() {
-        console.log(editRowData)
-        // const { dbName, tableName, } = structureInfo
-        console.log(readyStructureData[editIndex], editRowData)
-        // const updateSQL = `ALTER TABLE ${dbName}.${tableName} RENAME COLUMN ${readyStructureData[editIndex].Field} TO ${editRowData.Field}`
-        // change语句：ALTER TABLE 表名 CHANGE 字段名 新字段名 新字段属性
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} ADD ${formatSQLSpecialChar(editRowData.Field)} ${editRowData.Type} ${editRowData.Key === 'PRI' ? 'PRIMARY KEY' : ''} ${editRowData.Null === 'NO' ? 'NOT NULL' : 'NULL'} ${editRowData.Extra}`
-        console.log(updateSQL)
-
-        let reqData: RequestGo.RequestGoData[] = [{
-            operType: operationTypes.DB_OPERATION,
-            connDBId,
-            data: {
-                type: dbOperationTypes.EXEC_SQL,
-                execSQL: updateSQL
-            }
-        }]
-
-        requestGoCommon(reqData).then(responseList => {
-            // console.log(responseList)
-            const [backData] = responseList;
-            if (backData.code === 1) { // 执行成功触发父组件事件重新获取表结构
-                // UpdateTableStructureData
-                UpdateTableStructureData();
-                AddMessage({
-                    type: 'success',
-                    duration: 1,
-                    content: `新增字段成功`,
-                })
-                setEditIndex(-1);
+        const newReadyStructureData = readyStructureData.map((item:any,index:number)=>{
+            if (index === editIndex) {
+                const {__new__,...otherItem} = editRowData //去除掉__new__
+                return otherItem
             } else {
-                AddMessage({
-                    type: 'error',
-                    duration: 0,
-                    content: backData.errorMsg,
-                })
+                return item
             }
+            
         })
+        setReadyStructureData(newReadyStructureData);
+        setEditIndex(-1);
     }
 
     /**
      * 逻辑上的删除，并不需要修改数据库数据
      */
     function delNewTabColEvent() {
-        console.log(readyStructureData)
         const newReadyStructureData = readyStructureData.filter((item: any) => { return !item.__new__ })
         setReadyStructureData(newReadyStructureData)
-        structureForm.setFieldsValue({
-            table: newReadyStructureData
-        })
+        // structureForm.setFieldsValue({
+        //     table: newReadyStructureData
+        // })
     }
 
     // function onFinishEvent(values: any): void {
@@ -383,41 +303,87 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
     //     console.log(editRowData)
     // }
 
+    function selectDBEvent (value:string) {
+        setActiveDBName(value)
+    }
+
     /**
      * 更新表名组件
      * @returns React.ReactNode
      */
     function editTabNameNode():React.ReactNode {
-        return !editTabNameFlag ? <Space.Compact className='modal_title_box'><span>{tableName}</span><Button type="link" size="small" onClick={() => setEditTabNameFlag(true)}>编辑</Button></Space.Compact>
-            : <Space.Compact className='modal_title_box'><Input defaultValue={tableName} ref={editTabNameInput}></Input><Button type="primary" size="small" onClick={() => {editTabNameEvent()}}>确认</Button></Space.Compact>
+        const selectList = databases.map((item:GoMysqlDataBase)=>{
+            return {value: item.Database,label: item.Database}
+        })
+        return <Space wrap>
+            <span>数据库</span>
+            <Select
+            showSearch
+            // ref={selectInput}
+            // defaultValue="lucy"
+            style={{ width: 120 }}
+            onChange={selectDBEvent}
+            options={selectList}
+            filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+            />
+            <span>表名</span>
+            <Input ref={tabNameInput}></Input>
+            {/* <Button type="primary" size="small" onClick={() => {editTabNameEvent()}}>确认</Button> */}
+        </Space>
     }
 
-    function editTabNameEvent () {
-        setEditTabNameFlag(false)
-        let newTabName = (editTabNameInput.current as any).input.value
-        if (!newTabName) {
+    function addNewTableEvent ():void {
+        console.log(readyStructureData)
+        console.log(activeDBName)
+        console.log((tabNameInput.current as any).input.value)
+        const tableName = (tabNameInput.current as any).input.value
+        if (!activeDBName || !tableName) {
             AddMessage({
-                type: 'warning',
+                type: "warning",
                 duration: 1,
-                content: '表名不能为空！',
+                content: '请选择要添加表的数据库以及录入表名！',
             })
             return;
         }
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} RENAME TO ${formatSQLSpecialChar(dbName!)}.${formatSQLSpecialChar(newTabName)}`
-        console.log(updateSQL)
-
+        const dbAndTabName = `${formatSQLSpecialChar(activeDBName!)}.${formatSQLSpecialChar(tableName)}`
+        const PRIList:string[] = []
+        const fieldColList = readyStructureData.map((item:any)=>{
+            if (item["Key"] === "PRI") PRIList.push(formatSQLSpecialChar(item["Field"]))
+            return `${formatSQLSpecialChar(item["Field"])} ${item["Type"]} ${item['Null']==='YES'?'NULL':'NOT NULL'} ${item['Extra']==='auto_increment'?'auto_increment':''}`
+        })
+        const PRIStr = PRIList.length > 0 ? `,PRIMARY KEY (${PRIList.join(',')})`:''
+        const createTableSQL = `CREATE TABLE ${dbAndTabName} (${fieldColList.join(',')} ${PRIStr})`
+        console.log(createTableSQL)
         let reqData: RequestGo.RequestGoData[] = [{
             operType: operationTypes.DB_OPERATION,
             connDBId,
             data: {
                 type: dbOperationTypes.EXEC_SQL,
-                execSQL: updateSQL
+                execSQL: createTableSQL
             }
         }]
 
         requestGoCommon(reqData).then(responseList => {
-            console.log(responseList)
-            RealoadData()
+            // console.log(responseList)
+            const [backData] = responseList
+            if (backData.code === 1) {
+                RealoadData()
+                AddMessage({
+                    type: 'success',
+                    duration: 1,
+                    content: '添加新表成功',
+                })
+                ToggleModalEvent()
+            } else {
+                AddMessage({
+                    type: 'warning',
+                    duration: 1,
+                    content: '添加新表失败了，请稍候重试',
+                })
+            }
+            
         })
     }
 
@@ -437,17 +403,20 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             pagination={false}
             footer={() => <p><Button block onClick={newCreateRowEvent}>新增一行新列</Button></p>} />
         {/* </Form.Item> */}
-        <p>{JSON.stringify(readyStructureData)}</p>
-        <p>{JSON.stringify(editRowData)}</p>
+        {/* <p>{JSON.stringify(readyStructureData)}</p>
+        <p>{JSON.stringify(editRowData)}</p> */}
         {/* <Form.Item label=" " colon={false}>
                 <Button type="primary" htmlType="submit">提交</Button>
             </Form.Item> */}
         {/* </Form> */}
+        <div className='btn_box'>
+            <Button block type="primary" onClick={addNewTableEvent}>新增新表</Button>
+        </div>        
     </Modal>
 })
 
-export default DBTableStructureModal
+export default DBTableCreateTableModal
 
 export type {
-    DBTabStructure
+    DBTabCreateTable
 }

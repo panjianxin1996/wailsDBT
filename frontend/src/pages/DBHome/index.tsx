@@ -1,9 +1,6 @@
 import React, { useEffect, useState, useReducer, useRef } from 'react'
 import {
     DatabaseOutlined,
-    LaptopOutlined,
-    NotificationOutlined,
-    UserOutlined,
     RetweetOutlined,
     TableOutlined,
     InsertRowBelowOutlined,
@@ -132,12 +129,14 @@ function DBHome() {
     /**
      * 暴露更新菜单列表数据 需要在修改表名的时候去更新
      */
-    function RealoadData () {
-        onSelectDBListEvent(activeDBIndex)
-        const [dbName, tableName] = activeDBtable.split('/')
-        // ShowDBTableRef.current.dasda
-        // ShowDBTableRef.current?.UpdateTable({dbName, tableName})
-
+    function RealoadData(tableKey?: string):void {
+        if (!tableKey) {
+            onSelectDBListEvent(activeDBIndex) // 重新选中数据库
+            return;
+        } 
+        onSelectDBListEvent(activeDBIndex) // 重新选中数据库
+        const [dbName, tableName] = tableKey.split('/') // 获取更新后的数据库以及表名称
+        ShowDBTableRef.current?.UpdateTable({ dbName, tableName })
     }
 
     /**
@@ -145,17 +144,16 @@ function DBHome() {
      * @param currentDB 当前数据库名称
      * @returns null
      */
-    function getCurrentDBTables(currentDB: string | undefined) {
+    function getCurrentDBTables(currentDB: string | undefined): void {
         if (currentDB === undefined) {
             return
         }
-        console.log("重新刷新")
         // 获取数据库里的表
-        GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(res => {
+        GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(res=>{
             let result = res ? JSON.parse(res).dataList : []
             let tables = result.map((item: GoMysqlTables, index: number) => {
-                // console.log(item[`Tables_in_${currentDB}`])
-                return { key: currentDB + '/' + item[`Tables_in_${currentDB}`], label: item[`Tables_in_${currentDB}`], icon: <TableOutlined /> }
+                const tableKey = currentDB + '/' + item[`Tables_in_${currentDB}`]
+                return { key: tableKey, label: item[`Tables_in_${currentDB}`], icon: <TableOutlined /> }
             })
             let newDatabaseMenu = databaseMenu.map((item, i) => {
                 if (i === 0) {
@@ -170,16 +168,13 @@ function DBHome() {
      * 
      */
     function onMenuSelect(item: any) {
-        // console.log(item)
         setActiveDBtable(item.key)
         const [dbName, tableName] = item.key.split('/')
-        // ShowDBTableRef.current.dasda
-        ShowDBTableRef.current?.CreateTable({dbName, tableName})
+        ShowDBTableRef.current?.CreateTable({ dbName, tableName })
     }
 
-    function onSearchEvent (querySQLStr: string) {
-        // console.log(querySQLStr)
-        ShowDBTableRef.current?.CreateTable({newQuerySQL: true,querySQLStr})
+    function onSearchEvent(querySQLStr: string) {
+        ShowDBTableRef.current?.CreateTable({ newQuerySQL: true, querySQLStr })
     }
 
     return (
@@ -200,7 +195,7 @@ function DBHome() {
                             <div className='card_box flex_col flex_just_center'>
                                 <div className='select_card'>
                                     <p className='select_card_via'>
-                                        <DatabaseOutlined style={{fontSize: "24px"}} />
+                                        <DatabaseOutlined style={{ fontSize: "24px" }} />
                                     </p>
                                     <span className='select_card_text'>{databases && databases[activeDBIndex].Database}</span>
                                     <RetweetOutlined />
@@ -218,11 +213,10 @@ function DBHome() {
                     </Sider>
                     {/* 右主框 */}
                     <Content className='right_content' style={{ minHeight: 280 }}>
-                        {/* <Button onClick={handleClick}>触发useReducer</Button> */}
                         <div className='content_search_box flex_col flex_just_center'>
-                            <Input.Search 
-                                prefix={<SearchOutlined className='search_input_icon' />} 
-                                bordered={false} placeholder='您可以输入SQL语句或者创建一个空白的查询框。' 
+                            <Input.Search
+                                prefix={<SearchOutlined className='search_input_icon' />}
+                                bordered={false} placeholder='您可以输入SQL语句或者创建一个空白的查询框。'
                                 enterButton="创建查询"
                                 onSearch={onSearchEvent}
                             />
@@ -232,9 +226,7 @@ function DBHome() {
                                 value={text}
                                 hintData={allDBState}
                             /> */}
-                            {/* <button onClick={test}>test</button> */}
-                            <ShowDBTable RealoadData={RealoadData} ref={ShowDBTableRef} connDBId={connectId} hintDBData={allDBState} />
-
+                            <ShowDBTable RealoadData={RealoadData} ref={ShowDBTableRef} databases={databases!} connDBId={connectId} hintDBData={allDBState} />
                         </div>
                     </Content>
                 </Layout>
