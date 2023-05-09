@@ -312,7 +312,7 @@ const DBTableCreateTableModal = forwardRef<DBTabCreateTable.DBTabCreateTableRef,
      * @returns React.ReactNode
      */
     function editTabNameNode():React.ReactNode {
-        const selectList = databases.map((item:GoMysqlDataBase)=>{
+        const selectList = databases?.map((item:GoMysqlDataBase)=>{
             return {value: item.Database,label: item.Database}
         })
         return <Space wrap>
@@ -378,9 +378,9 @@ const DBTableCreateTableModal = forwardRef<DBTabCreateTable.DBTabCreateTableRef,
                 ToggleModalEvent()
             } else {
                 AddMessage({
-                    type: 'warning',
-                    duration: 1,
-                    content: '添加新表失败了，请稍候重试',
+                    type: 'error',
+                    duration: 0,
+                    content: '添加新表失败了，请稍候重试:'+backData.errorMsg,
                 })
             }
             

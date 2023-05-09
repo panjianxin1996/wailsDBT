@@ -1015,6 +1015,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
             }
         }]
         requestGoCommon(reqData).then(responseList => {
+            console.log(responseList)
             const [backData] = responseList;
             if (backData.code === 1) {
                 const tableDataSource = backData.dataList;
@@ -1136,43 +1137,45 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         {modalContextHolder}
         <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} structureData={getActiveTabHandle()?.tableColumnsSource} RealoadData={RealoadData} UpdateTableStructureData={UpdateTableStructureData} AddMessage={AddMessage} />
         <DBTableCreateTableModal ref={DBTabCreateTableRef} connDBId={connDBId} structureData={[]} RealoadData={RealoadData} AddMessage={AddMessage} databases={databases} />
-        {   
+        {
             state.tableObjectArray.length > 0 ?
                 // 数据表页面
                 <div className='db_table'>
-                    
-                    <Modal
-                        title={state.modalView.type === 'edit' ? "修改记录" : "新增记录"}
-                        footer={false}
-                        open={state.modalView?.showFlag}
-                        onCancel={() => { toggleModalViewEvent() }}
-                    >
-                        <div style={{ height: '400px', overflow: "auto" }}>
-                            <Form
-                                form={activeRowForm}
-                                name="form_in_modal"
-                                labelCol={{ span: 8 }}
-                                wrapperCol={{ span: 15 }}
-                                onFinish={onFormFinish}
-                            >
-                                {
-                                    getActiveTabHandle()?.tableColumns.map((item: any, index: number) => {
-                                        return <Form.Item
-                                            name={item.title}
-                                            label={item.title}
-                                            key={"form_item_" + index.toString()}
-                                        >
-                                            <Input.TextArea
-                                                autoSize={{ minRows: 1, maxRows: 4 }}
-                                            />
-                                        </Form.Item>
-                                    })
-                                }
-                                <Button shape="round" block={true} type="primary" htmlType="submit">{state.modalView.type === 'edit' ? '修改' : '新增'}</Button>
-                            </Form>
-                        </div>
-                    </Modal>
-                    
+                    {
+                        !getActiveTabHandle()?.newQuerySQL && <Modal
+                            title={state.modalView.type === 'edit' ? "修改记录" : "新增记录"}
+                            footer={false}
+                            open={state.modalView?.showFlag}
+                            onCancel={() => { toggleModalViewEvent() }}
+                        >
+                            <div style={{ height: '400px', overflow: "auto" }}>
+                                <Form
+                                    form={activeRowForm}
+                                    name="form_in_modal"
+                                    labelCol={{ span: 8 }}
+                                    wrapperCol={{ span: 15 }}
+                                    onFinish={onFormFinish}
+                                >
+                                    {
+                                        getActiveTabHandle()?.tableColumns.map((item: any, index: number) => {
+                                            return <Form.Item
+                                                name={item.title}
+                                                label={item.title}
+                                                key={"form_item_" + index.toString()}
+                                            >
+                                                <Input.TextArea
+                                                    autoSize={{ minRows: 1, maxRows: 4 }}
+                                                />
+                                            </Form.Item>
+                                        })
+                                    }
+                                    <Button shape="round" block={true} type="primary" htmlType="submit">{state.modalView.type === 'edit' ? '修改' : '新增'}</Button>
+                                </Form>
+                            </div>
+                        </Modal>
+                    }
+
+
                     <Row className='tab_header' align='middle'>
                         <Col span={18}>
                             <Row align='middle'>

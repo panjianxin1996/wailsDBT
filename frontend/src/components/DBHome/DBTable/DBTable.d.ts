@@ -23,7 +23,7 @@ export namespace DBTable {
         /**
          * 数据库列表
          */
-        databases: GoMysqlDataBase[];
+        databases: GoMysqlDataBase[] | undefined;
     }
 
     interface ShowDBTableRef {

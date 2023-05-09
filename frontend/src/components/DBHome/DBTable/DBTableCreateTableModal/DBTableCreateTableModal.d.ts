@@ -31,7 +31,7 @@ export namespace DBTabCreateTable {
         /**
          * 数据库列表
          */
-        databases: GoMysqlDataBase[];
+        databases: GoMysqlDataBase[] | undefined;
     }
 
     interface DBTabCreateTableRef {

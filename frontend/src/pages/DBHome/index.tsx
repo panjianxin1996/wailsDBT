@@ -226,7 +226,7 @@ function DBHome() {
                                 value={text}
                                 hintData={allDBState}
                             /> */}
-                            <ShowDBTable RealoadData={RealoadData} ref={ShowDBTableRef} databases={databases!} connDBId={connectId} hintDBData={allDBState} />
+                            <ShowDBTable RealoadData={RealoadData} ref={ShowDBTableRef} databases={databases} connDBId={connectId} hintDBData={allDBState} />
                         </div>
                     </Content>
                 </Layout>
