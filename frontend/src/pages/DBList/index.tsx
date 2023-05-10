@@ -110,7 +110,10 @@ const ConnectDB: React.FC = () => {
             }
         ]
         requestGoCommon(reqData).then(responseList => {
-            const [connectId] = responseList
+            console.log(responseList)
+            const [backData] = responseList
+            const connectId = backData.dataList
+            console.log(backData)
         // GoConnectDB(JSON.stringify(cardItem)).then((connectId: string) => {
             // console.log(connectId)
             if (type === 'add') {

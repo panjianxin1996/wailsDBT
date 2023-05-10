@@ -27,12 +27,14 @@ const requestGoCommon = async function (reqDataList: RequestGo.RequestGoData[]) 
              */
             case operationTypes.DB_CONNECT:
                 requestStack.push(GoConnectDB(JSON.stringify({...item.data})))
+                break
             /**
              * ping与数据库的连接状态 判断是否失活
              * @param connDBId 连接的句柄
              */
             case operationTypes.DB_PING:
                 requestStack.push(item.connDBId && GoPingDB(item.connDBId))
+                break
             /**
              * 操作数据库操作 尽可能的在执行该操作时通过ping方法判断连接是否失活
              * @param connDBId 连接句柄
@@ -40,6 +42,7 @@ const requestGoCommon = async function (reqDataList: RequestGo.RequestGoData[]) 
              */
             case operationTypes.DB_OPERATION:
                 requestStack.push(item.connDBId && GoOperateDB(item.connDBId, JSON.stringify({...item.data})))
+                break
         }
     
     })
