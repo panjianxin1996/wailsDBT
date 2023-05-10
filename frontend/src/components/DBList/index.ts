@@ -1,7 +1,7 @@
 import DBListCard,{DBListCardProps} from './DBListCard'
-import DBListRegisterModal from './DBListRegisterModal'
+import DBListRegisterModal,{DBListRegister} from './DBListRegisterModal'
 export {
     DBListCard,
     DBListRegisterModal
 }
-export type { DBListCardProps }
+export type { DBListCardProps,DBListRegister }

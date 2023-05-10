@@ -1,14 +1,23 @@
-import React from "react"
+import React,{useImperativeHandle,forwardRef, useState} from "react"
 import { Col, Modal, Row, Image, Form, Select, Space, Input, InputNumber, Button } from 'antd'
 import { ProjectTwoTone} from '@ant-design/icons'
 import {DBListCardProps} from '../DBListCard'
 import addDBCover from '../../../assets/images/add_db_cover.png'
-import './DBListRegisterModal.scss'
+import type {DBListRegister} from './DBListRegister'
+import './index.scss'
 
 
-const DBListRegisterModal: React.FC<{modalWindowFlag: boolean,onOpenWindow: Function,onAddDataBase: Function}> = (props) => {
-    const {modalWindowFlag,onOpenWindow,onAddDataBase} = props
+const DBListRegisterModal = forwardRef<DBListRegister.DBListRegisterRef,DBListRegister.Props>((props,ref) => {
+    
+    const {onAddDataBase} = props
+    const [showModal,setShowModal] = useState<boolean>(false)
     const [form] = Form.useForm();
+
+    useImperativeHandle(ref,()=>({ToggleShowModal}))
+
+    function ToggleShowModal () {
+        setShowModal(!showModal)
+    }
 
     function onFinish(data:any) {
         console.log(data)
@@ -30,7 +39,7 @@ const DBListRegisterModal: React.FC<{modalWindowFlag: boolean,onOpenWindow: Func
             createDate: new Date().getTime()
         }
         onAddDataBase(sendData).then(()=>{
-            onOpenWindow(false)
+            ToggleShowModal()
         })
         // addDataBase(sendData).then
         // GoConnectDB(JSON.stringify(sendData)).then(dbId=>{
@@ -46,9 +55,9 @@ const DBListRegisterModal: React.FC<{modalWindowFlag: boolean,onOpenWindow: Func
         // title="Modal 1000px width"
         className="modal_box"
         centered
-        open={modalWindowFlag}
+        open={showModal}
         // onOk={() => setOpen(false)}
-        onCancel={() => onOpenWindow(false)}
+        onCancel={ToggleShowModal}
         width={1000}
         footer={false}
     >
@@ -147,7 +156,7 @@ const DBListRegisterModal: React.FC<{modalWindowFlag: boolean,onOpenWindow: Func
                                 确定
                             </Button>
                         </Form.Item>
-                        <p className="tips_txt">我可能不太清楚连接数据库的信息有哪些？</p>
+                        <p className="tips_txt">我可能不太清楚连接数据库的信息有哪些？<Button type="link" onClick={()=>window.open('https://dev.mysql.com/doc/')}>查看</Button></p>
                     </Form>
 
                 </div>
@@ -155,6 +164,10 @@ const DBListRegisterModal: React.FC<{modalWindowFlag: boolean,onOpenWindow: Func
         </Row>
 
     </Modal>
-}
+})
 
 export default DBListRegisterModal
+
+export type {
+    DBListRegister
+}

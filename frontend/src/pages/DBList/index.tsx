@@ -1,31 +1,35 @@
-import { Card, Input, Layout, Menu, MenuProps, Modal, Image, Row, Col, Form, Checkbox, Button, InputNumber, Select, Space, Spin } from "antd"
+import { Input, Layout, Spin } from "antd"
 import { ProjectTwoTone, SearchOutlined, EditOutlined } from '@ant-design/icons';
-import React, { useContext, useEffect, useState } from "react"
+import React, { useContext, useEffect, useRef, useState } from "react"
 import './index.scss'
-import { DBListCard, DBListRegisterModal, DBListCardProps } from '../../components/DBList'
+import { DBListCard, DBListRegisterModal, DBListCardProps,DBListRegister } from '../../components/DBList'
 import { useNavigate } from "react-router-dom";
-import type {DBList} from './DBList'
+// import type {DBList} from './DBList'
 import AppContext from '../../AppContext'
 // import { navigate } from "../../utils/index";
 
 import { GoConnectDB, GoPingDB } from "../../../wailsjs/go/main/App";
+import requestGoCommon,{RequestGo,operationTypes,dbOperationTypes} from '../../utils/requestGo'
 
-const { Header, Content, Footer, Sider } = Layout;
+const { Content } = Layout;
 
 
 
 const ConnectDB: React.FC = () => {
+    // 获取存储连接的数据库配置信息到localStorage中
     let storageData = localStorage.getItem('my_db_list')
     let storageDBList = !storageData ? [] : JSON.parse(storageData)
 
     const navigate = useNavigate();
-    const [modalWindow, setModalWindow] = useState<boolean>(false);
+    // const [modalWindow, setModalWindow] = useState<boolean>(false);
     const [dbList, setDBList] = useState<DBListCardProps[]>(storageDBList);
     const [spinning, setSpinning] = useState<boolean>(false);
     const [spinningTips, setSpinningTips] = useState<string>('');
 
-    const [connDBList, setConnDBList] = useState<DBList.connDBInfo[]>([])
-    const context = useContext(AppContext)
+    // const [connDBList, setConnDBList] = useState<DBList.connDBInfo[]>([]);
+    // 通过context存储全部登录的数据库信息
+    const context = useContext(AppContext);
+    const registerRef = useRef<DBListRegister.DBListRegisterRef>(null)
     // console.log(context)
 
 
@@ -47,7 +51,7 @@ const ConnectDB: React.FC = () => {
      * @param dbConifg DBListCardProps
      * @returns Promise<void>
      */
-    async function addDataBase(dbConifg: DBListCardProps): Promise<void> {
+    async function AddDataBase(dbConifg: DBListCardProps): Promise<void> {
         // { dbname, dbcontent, username,password,host,port, type: 0 }
         let changeDBList = [{ ...dbConifg }, ...dbList]
         console.log(changeDBList)
@@ -99,7 +103,15 @@ const ConnectDB: React.FC = () => {
 
     function connectDBRequest (cardItem: DBListCardProps,listKey: string,type: string) {
         const connDBList = context.state.dbList;
-        GoConnectDB(JSON.stringify(cardItem)).then((connectId: string) => {
+        let reqData: RequestGo.RequestGoData[] = [
+            {
+                operType: operationTypes.DB_CONNECT,
+                data: cardItem
+            }
+        ]
+        requestGoCommon(reqData).then(responseList => {
+            const [connectId] = responseList
+        // GoConnectDB(JSON.stringify(cardItem)).then((connectId: string) => {
             // console.log(connectId)
             if (type === 'add') {
                 context.dispatch({
@@ -167,10 +179,12 @@ const ConnectDB: React.FC = () => {
 
             </div>
             <Content className='content_box'>
+                {/* 注册弹框 */}
                 <DBListRegisterModal
-                    modalWindowFlag={modalWindow}
-                    onOpenWindow={(flag: boolean) => { setModalWindow(flag) }}
-                    onAddDataBase={(dbConifg: DBListCardProps) => { addDataBase(dbConifg) }} />
+                    ref={registerRef}
+                    // modalWindowFlag={modalWindow}
+                    // onOpenWindow={() => { registerRef.current?.ToggleShowModal() }}
+                    onAddDataBase={AddDataBase} />
                 <div className="content_header flex_row flex_align_center">
                     <h1>数据库列表</h1>
                 </div>
@@ -193,7 +207,7 @@ const ConnectDB: React.FC = () => {
                     {/* 新增数据库 */}
                     <DBListCard
                         type={1}
-                        onClick={() => { setModalWindow(true) }}
+                        onClick={() => { registerRef.current?.ToggleShowModal() }}
                     />
                     {
                         // 渲染空白区域

@@ -1,5 +1,6 @@
 enum operationTypes {
     DB_PING = 0,
+    DB_CONNECT,
     DB_OPERATION
 }
 enum dbOperationTypes {

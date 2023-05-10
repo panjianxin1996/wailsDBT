@@ -34,23 +34,25 @@ const (
 )
 
 // 连接数据库
-func Conn(configJson string) *sql.DB {
+func Conn(configJson string) (*sql.DB, error) {
 	dbConfig := DataBaseConfig{}
 	tmpStr := []byte(configJson)
 	if err := json.Unmarshal(tmpStr, &dbConfig); err != nil {
-		panic(err)
+		// panic(err)
+		return nil, err
 	}
 	connectConfig := fmt.Sprintf("%s:%s@tcp(%s:%d)/?charset=utf8&multiStatements=true", dbConfig.Username, dbConfig.Password, dbConfig.Host, dbConfig.Port)
 	fmt.Println(connectConfig)
 	db, err := sql.Open("mysql", connectConfig)
 	if err != nil {
-		panic(err)
+		// panic(err)
+		return nil, err
 	}
 	// Set time out is 30s.
 	db.SetConnMaxLifetime(time.Minute * 5)
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
-	return db
+	return db, nil
 }
 
 // ping数据库

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"fmt"
 
@@ -35,11 +36,23 @@ func (a *App) Greet(name string) string {
 }
 
 func (a *App) GoConnectDB(configJson string) string {
+	backJSON := make(map[string]interface{})
 	dbIdStr := fmt.Sprintf("db_%d", a.mapId)
-	handleDB := dataBase.Conn(configJson)
+	handleDB, err := dataBase.Conn(configJson)
+	if err != nil {
+		backJSON["code"] = 1
+		backJSON["errorMsg"] = err.Error()
+		backJSON["dataList"] = nil
+		bytes, _ := json.Marshal(backJSON)
+		return string(bytes)
+	}
 	a.dbMap[dbIdStr] = handleDB
 	a.mapId++
-	return dbIdStr
+	backJSON["code"] = 1
+	backJSON["errorMsg"] = nil
+	backJSON["dataList"] = dbIdStr
+	bytes, _ := json.Marshal(backJSON)
+	return string(bytes)
 }
 
 func (a *App) GoPingDB(dbId string) bool {
