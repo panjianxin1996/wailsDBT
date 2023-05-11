@@ -18,10 +18,11 @@ import {
 import { DBTable, SelectDBList, ShowDBTable } from "../../components/DBHome/index"
 import SQLMonacoEditor, { monacoEditor } from "../../components/Monaco/index"
 import { useLocation } from 'react-router-dom'
-import { GoOperateDB } from "../../../wailsjs/go/main/App"
+// import { GoOperateDB } from "../../../wailsjs/go/main/App"
 
 
 import "./index.scss"
+import { dbOperationTypes, operationTypes, RequestGo, requestGoCommon } from '../../utils'
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -65,22 +66,63 @@ function DBHome() {
     function dataReducer() {
         let dbState: monacoEditor.Hints = {}
         // console.log("执行")
-        GoOperateDB(connectId, JSON.stringify({ type: 0 })).then((allDBList) => {
-            // console.log(allDBList)
-            let tmpDBList = allDBList ? JSON.parse(allDBList).dataList : []
+        let reqData: RequestGo.RequestGoData[] = [{
+            operType: operationTypes.DB_OPERATION,
+            connDBId: connectId,
+            data: {
+                type: dbOperationTypes.GET_ALL_DATABASES
+            }
+        }]
+        
+        requestGoCommon(reqData).then(responseList => {
+            const [backData] = responseList;
+            let tmpDBList = backData.dataList;
             tmpDBList.forEach((db: GoMysqlDataBase) => {
                 let currentDB = db.Database
-                GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(tables => {
-                    let tableList = tables ? JSON.parse(tables).dataList : []
+                let reqTableData: RequestGo.RequestGoData[] = [{
+                    operType: operationTypes.DB_OPERATION,
+                    connDBId: connectId,
+                    data: {
+                        type: dbOperationTypes.GET_CURRENT_TABLES,
+                        currentDB
+                    }
+                }]
+                requestGoCommon(reqTableData).then(responseTableList => {
+                    const [backTableData] = responseTableList;
+                    let tableList = backTableData.dataList;
                     dbState[currentDB] = tableList.map((table: GoMysqlTables) => table[`Tables_in_${currentDB}`])
                     // 性能优化 只能当进行的所有操作完成时才进行state更新以及渲染
                     if (Object.keys(dbState).length === tmpDBList.length) {
                         setAllDBstate({ ...dbState })
                     }
-
                 })
+                // GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(tables => {
+                //     let tableList = tables ? JSON.parse(tables).dataList : []
+                //     dbState[currentDB] = tableList.map((table: GoMysqlTables) => table[`Tables_in_${currentDB}`])
+                //     // 性能优化 只能当进行的所有操作完成时才进行state更新以及渲染
+                //     if (Object.keys(dbState).length === tmpDBList.length) {
+                //         setAllDBstate({ ...dbState })
+                //     }
+
+                // })
             })
         })
+        // GoOperateDB(connectId, JSON.stringify({ type: 0 })).then((allDBList) => {
+        //     // console.log(allDBList)
+        //     let tmpDBList = allDBList ? JSON.parse(allDBList).dataList : []
+        //     tmpDBList.forEach((db: GoMysqlDataBase) => {
+        //         let currentDB = db.Database
+        //         GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(tables => {
+        //             let tableList = tables ? JSON.parse(tables).dataList : []
+        //             dbState[currentDB] = tableList.map((table: GoMysqlTables) => table[`Tables_in_${currentDB}`])
+        //             // 性能优化 只能当进行的所有操作完成时才进行state更新以及渲染
+        //             if (Object.keys(dbState).length === tmpDBList.length) {
+        //                 setAllDBstate({ ...dbState })
+        //             }
+
+        //         })
+        //     })
+        // })
         // 测试注入数据库&表
         // setMyDBstate({"test":["table1","table2","table3","tabl4"],"mysql":["da","daxa","user"]})
 
@@ -106,10 +148,22 @@ function DBHome() {
      */
     function getAllDataBase() {
         // 获取所有数据库
-        GoOperateDB(connectId, JSON.stringify({ type: 0 })).then(res => {
-            setDatabases(JSON.parse(res).dataList)
+        let reqData: RequestGo.RequestGoData[] = [{
+            operType: operationTypes.DB_OPERATION,
+            connDBId: connectId,
+            data: {
+                type: dbOperationTypes.GET_ALL_DATABASES
+            }
+        }]
+        requestGoCommon(reqData).then(responseList => {
+            const [backData] = responseList;
+            setDatabases(backData.dataList);
             setActiveDBIndex(0)
         })
+        // GoOperateDB(connectId, JSON.stringify({ type: 0 })).then(res => {
+        //     setDatabases(JSON.parse(res).dataList)
+        //     setActiveDBIndex(0)
+        // })
     }
 
     /**
@@ -149,8 +203,17 @@ function DBHome() {
             return
         }
         // 获取数据库里的表
-        GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(res=>{
-            let result = res ? JSON.parse(res).dataList : []
+        let reqData: RequestGo.RequestGoData[] = [{
+            operType: operationTypes.DB_OPERATION,
+            connDBId: connectId,
+            data: {
+                type: dbOperationTypes.GET_CURRENT_TABLES,
+                currentDB
+            }
+        }]
+        requestGoCommon(reqData).then(responseList => {
+            const [backData] = responseList;
+            let result = backData.dataList
             let tables = result.map((item: GoMysqlTables, index: number) => {
                 const tableKey = currentDB + '/' + item[`Tables_in_${currentDB}`]
                 return { key: tableKey, label: item[`Tables_in_${currentDB}`], icon: <TableOutlined /> }
@@ -161,8 +224,22 @@ function DBHome() {
                 }
                 return item
             })
-            setDatabaseMenu(newDatabaseMenu)
+            setDatabaseMenu(newDatabaseMenu);
         })
+        // GoOperateDB(connectId, JSON.stringify({ type: 1, currentDB })).then(res=>{
+        //     let result = res ? JSON.parse(res).dataList : []
+        //     let tables = result.map((item: GoMysqlTables, index: number) => {
+        //         const tableKey = currentDB + '/' + item[`Tables_in_${currentDB}`]
+        //         return { key: tableKey, label: item[`Tables_in_${currentDB}`], icon: <TableOutlined /> }
+        //     })
+        //     let newDatabaseMenu = databaseMenu.map((item, i) => {
+        //         if (i === 0) {
+        //             return { ...item, children: tables }
+        //         }
+        //         return item
+        //     })
+        //     setDatabaseMenu(newDatabaseMenu)
+        // })
     }
     /**
      * 

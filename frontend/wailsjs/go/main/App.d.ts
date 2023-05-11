@@ -5,6 +5,6 @@ export function GoConnectDB(arg1:string):Promise<string>;
 
 export function GoOperateDB(arg1:string,arg2:string):Promise<any>;
 
-export function GoPingDB(arg1:string):Promise<boolean>;
+export function GoPingDB(arg1:string):Promise<string>;
 
 export function Greet(arg1:string):Promise<string>;

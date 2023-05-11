@@ -1,19 +1,13 @@
-import { Input, Layout, Spin } from "antd"
+import { Input, Layout, Spin } from "antd";
 import { ProjectTwoTone, SearchOutlined, EditOutlined } from '@ant-design/icons';
-import React, { useContext, useEffect, useRef, useState } from "react"
-import './index.scss'
-import { DBListCard, DBListRegisterModal, DBListCardProps,DBListRegister } from '../../components/DBList'
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { DBListCard, DBListRegisterModal, DBListCardProps, DBListRegister } from '../../components/DBList';
 import { useNavigate } from "react-router-dom";
-// import type {DBList} from './DBList'
-import AppContext from '../../AppContext'
-// import { navigate } from "../../utils/index";
-
-import { GoConnectDB, GoPingDB } from "../../../wailsjs/go/main/App";
-import requestGoCommon,{RequestGo,operationTypes,dbOperationTypes} from '../../utils/requestGo'
+import AppContext from '../../AppContext';
+import requestGoCommon, { RequestGo, operationTypes, dbOperationTypes } from '../../utils/requestGo';
+import './index.scss';
 
 const { Content } = Layout;
-
-
 
 const ConnectDB: React.FC = () => {
     // 获取存储连接的数据库配置信息到localStorage中
@@ -70,38 +64,67 @@ const ConnectDB: React.FC = () => {
         localStorage.setItem('my_db_list', JSON.stringify(changeDBList))
     }
 
-    function onConnClickEvent (cardItem: DBListCardProps, listKey: string) {
+    /**
+     * 点击连接按钮
+     * @param cardItem 连接所需参数
+     * @param listKey 触发事件card的索引
+     */
+    function onConnClickEvent(cardItem: DBListCardProps, listKey: string) {
         const connDBList = context.state.dbList;
-        // console.log(key)
-        // console.log(connDBList)
         setSpinning(true)
         setSpinningTips('正在连接中。。。')
-        const checkHasConnIndex = connDBList.findIndex((connDBItem)=>{return connDBItem.listKey === listKey})
+        const checkHasConnIndex = connDBList.findIndex((connDBItem) => { return connDBItem.listKey === listKey })
         // 不存在连接句柄，创建连接
-        if (checkHasConnIndex === -1) { 
-            // console.log('添加进入连接')
+        if (checkHasConnIndex === -1) {
             connectDBRequest(cardItem, listKey, 'add')
         } else {
             let connectId = connDBList[checkHasConnIndex].connectId
-            GoPingDB(connectId).then((connFlag: boolean) => {
-                // console.log(connFlag)
-                // 存在连接句柄并没有失效，直接进入
-                if (connFlag) { 
-                    // console.log('存在进入连接')
-                    setTimeout(() => {
-                        navigate('/dbhome', { state: { connectId, ...cardItem } })
-                        setSpinning(false)
-                    }, 1500)
-                // 存在句柄，但是连接已经失效了，需要重新连接
-                } else { 
-                    // console.log('存在更新连接')
-                    connectDBRequest(cardItem, listKey, 'update')
-                }
+            pingDBRequest(connectId, () => {
+                // 存在连接，并且并未失活，直接复用进入连接
+                setTimeout(() => {
+                    navigate('/dbhome', { state: { connectId, ...cardItem } })
+                    setSpinning(false)
+                }, 1500)
+            }, () => {
+                // 存在连接，已经失活，更新并创建新连接
+                connectDBRequest(cardItem, listKey, 'update')
             })
         }
     }
 
-    function connectDBRequest (cardItem: DBListCardProps,listKey: string,type: string) {
+    /**
+     * 对数据库连接的校验，判断是否断开连接、失活、成功连接
+     * @param connDBId 连接句柄
+     * @param successFun 连接成功的回调函数
+     * @param failFun 连接失败的回调函数
+     * @example 
+     * pingDBRequest("test_1",()=>{
+     *      console.log("连接成功了")
+     * },()=>{
+     *      console.log("连接失败了")
+     * })
+     */
+    function pingDBRequest(connDBId: string, successFun?: Function, failFun?: Function) {
+        let reqData: RequestGo.RequestGoData[] = [
+            {
+                operType: operationTypes.DB_PING,
+                connDBId,
+                data: {}
+            }
+        ]
+        requestGoCommon(reqData).then(responseList => {
+            const [backData] = responseList
+            if (backData.code === 1) successFun && successFun(); else failFun && failFun();
+        })
+    }
+
+    /**
+     * 创建与数据库的连接
+     * @param cardItem 连接的参数
+     * @param listKey 连接的card key值
+     * @param type 连接的类型：add-不存在的连接，创建新连接，update-存在的连接，但是已经失活，更新该连接
+     */
+    function connectDBRequest(cardItem: DBListCardProps, listKey: string, type: string) {
         const connDBList = context.state.dbList;
         let reqData: RequestGo.RequestGoData[] = [
             {
@@ -110,43 +133,31 @@ const ConnectDB: React.FC = () => {
             }
         ]
         requestGoCommon(reqData).then(responseList => {
-            console.log(responseList)
             const [backData] = responseList
             const connectId = backData.dataList
-            console.log(backData)
-        // GoConnectDB(JSON.stringify(cardItem)).then((connectId: string) => {
-            // console.log(connectId)
             if (type === 'add') {
                 context.dispatch({
                     type: 'updateAppData',
-                    newDBList: [...connDBList,{listKey,connectId: connectId}]
+                    newDBList: [...connDBList, { listKey, connectId: connectId }]
                 })
-                // setConnDBList([...connDBList,{cardKey,connHandle: connectId}])
             } else {
-                let newConnDBList = connDBList.filter((item)=>item.listKey !== listKey).concat({listKey,connectId})
-                // let newConnDBList = connDBList.filter((item)=>item.cardKey !== cardKey).concat({cardKey,connHandle: connectId})
+                let newConnDBList = connDBList.filter((item) => item.listKey !== listKey).concat({ listKey, connectId })
                 context.dispatch({
                     type: 'updateAppData',
                     newDBList: newConnDBList
                 })
-                // setConnDBList(newConnDBList)
             }
-            GoPingDB(connectId).then((connFlag: boolean) => {
-                // console.log(connFlag)
-                if (connFlag) {
-                    // setSpinningTips('连接成功！')
-                    setTimeout(() => {
-                        navigate('/dbhome', { state: { connectId, ...cardItem } })
-                        setSpinning(false)
-                    }, 1500)
-                } else {
-                    setSpinningTips('连接失败，没有连接到服务！')
-                    setTimeout(() => {
-                        setSpinning(false)
-                    },1500)
-                }
+            pingDBRequest(connectId, () => {
+                setTimeout(() => {
+                    navigate('/dbhome', { state: { connectId, ...cardItem } })
+                    setSpinning(false)
+                }, 1500)
+            }, () => {
+                setSpinningTips('连接失败，没有连接到服务！')
+                setTimeout(() => {
+                    setSpinning(false)
+                }, 1500)
             })
-
         })
     }
 
@@ -177,7 +188,6 @@ const ConnectDB: React.FC = () => {
                 </div>
                 <div className="header_right_box">
                     <p>user</p>
-                    {/* <Button onClick={() => { console.log(connDB); GoPingDB(connDB).then((res: boolean) => { console.log(res) }) }}>ping数据库</Button> */}
                 </div>
 
             </div>
@@ -203,7 +213,7 @@ const ConnectDB: React.FC = () => {
                                 type={item.type}
                                 onClick={() => { navigate('/') }}
                                 onDelClick={() => { delDataBase(index) }}
-                                onConnClick={() => onConnClickEvent(item,DBListCardKey)}
+                                onConnClick={() => onConnClickEvent(item, DBListCardKey)}
                             />
                         })
                     }

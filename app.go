@@ -55,11 +55,22 @@ func (a *App) GoConnectDB(configJson string) string {
 	return string(bytes)
 }
 
-func (a *App) GoPingDB(dbId string) bool {
+func (a *App) GoPingDB(dbId string) string {
+	backJSON := make(map[string]interface{})
 	if a.dbMap[dbId] == nil {
-		return false
+		backJSON["code"] = -1
+		backJSON["errorMsg"] = "Not Connect handle."
+		backJSON["dataList"] = nil
+		// return false
+	} else {
+		connectFlag, err := dataBase.Ping(a.dbMap[dbId])
+		backJSON["code"] = connectFlag
+		backJSON["errorMsg"] = err
+		backJSON["dataList"] = nil
+
 	}
-	return dataBase.Ping(a.dbMap[dbId])
+	bytes, _ := json.Marshal(backJSON)
+	return string(bytes)
 }
 
 func (a *App) GoOperateDB(dbId string, operateDataJson string) interface{} {

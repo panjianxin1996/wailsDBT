@@ -56,12 +56,13 @@ func Conn(configJson string) (*sql.DB, error) {
 }
 
 // ping数据库
-func Ping(db *sql.DB) bool {
+func Ping(db *sql.DB) (int, error) {
 	if err := db.Ping(); err != nil {
-		return false
+		return -1, err
 	} else {
-		return true
+		return 1, nil
 	}
+
 }
 
 // 操作数据库

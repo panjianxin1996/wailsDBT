@@ -1015,7 +1015,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
             }
         }]
         requestGoCommon(reqData).then(responseList => {
-            console.log(responseList)
+            // console.log(responseList)
             const [backData] = responseList;
             if (backData.code === 1) {
                 const tableDataSource = backData.dataList;

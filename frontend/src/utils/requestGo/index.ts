@@ -47,7 +47,7 @@ const requestGoCommon = async function (reqDataList: RequestGo.RequestGoData[]) 
     
     })
     let backList = await Promise.all(requestStack)
-    console.log(backList)
+    // console.log(backList)
     return backList.map(item=>{return JSON.parse(item)})
 }
 
