@@ -54,6 +54,7 @@ export namespace DBTable {
         label: string; 
         dbName: string; // 当前数据库名
         tableName: string; // 当前表名
+        isView: boolean; // 是否为视图
         newQuerySQL: boolean; // 是否为自定义sql ,如果是则不通过自身组件进行 数据库操作而是用sql语句操作
         tableColumnsSource: TableDataItem[]; // 请求回来的原始表格结构数据
         tableDataSource: TableDataItem[]; // 请求回来的原始表格数据
@@ -119,6 +120,7 @@ export namespace DBTable {
         tableName?: string; // 表名
         newQuerySQL?: boolean; // 自定义SQL Flag
         querySQLStr?: string // 自定义SQL
+        isView?: boolean; // 是否为视图表
     }
 
     /**
@@ -131,7 +133,8 @@ export namespace DBTable {
         newQuerySQL?: boolean;
         tableStructureSQL?: string;
         QuerySQL?: string;
-        tabData?: TabData
+        tabData?: TabData;
+        isView?: boolean;
     }
 
     interface TabData {

@@ -9,13 +9,13 @@ import {
 } from '@ant-design/icons'
 import type { DBTabStructure } from './DBTableStructureModal';
 import { useForm } from 'antd/es/form/Form';
-import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, formatSQLSpecialChar } from '../../../../utils/index'
+import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, fmtSQLSpecialCh } from '../../../../utils/index'
 import './index.scss';
 const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTabStructure.Props>((props, ref) => {
     const { structureData, structureInfo, connDBId, UpdateTableStructureData, AddMessage,RealoadData } = props;
     const { dbName, tableName } = structureInfo;
     const [editTabNameFlag, setEditTabNameFlag] = useState(false);
-    const tableNameSQLStr = `${formatSQLSpecialChar(dbName!)}.${formatSQLSpecialChar(tableName!)}`;
+    const tableNameSQLStr = `${fmtSQLSpecialCh(dbName!)}.${fmtSQLSpecialCh(tableName!)}`;
     const [showModal, setShowModal] = useState<boolean>(false);
     const [editIndex, setEditIndex] = useState<number>(-1);
     const [editRowData, setEditRowData] = useState<any>({});
@@ -202,7 +202,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
         // console.log(readyStructureData[editIndex], editRowData)
         // const updateSQL = `ALTER TABLE ${dbName}.${tableName} RENAME COLUMN ${readyStructureData[editIndex].Field} TO ${editRowData.Field}`
         // change语句：ALTER TABLE 表名 CHANGE 字段名 新字段名 新字段属性
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} CHANGE ${formatSQLSpecialChar(readyStructureData[editIndex].Field)} ${formatSQLSpecialChar(editRowData.Field)} ${editRowData.Type} ${editRowData.Key === 'PRI' ? 'PRIMARY KEY' : ''} ${editRowData.Null === 'NO' ? 'NOT NULL' : 'NULL'} ${editRowData.Extra}`
+        const updateSQL = `ALTER TABLE ${tableNameSQLStr} CHANGE ${fmtSQLSpecialCh(readyStructureData[editIndex].Field)} ${fmtSQLSpecialCh(editRowData.Field)} ${editRowData.Type} ${editRowData.Key === 'PRI' ? 'PRIMARY KEY' : ''} ${editRowData.Null === 'NO' ? 'NOT NULL' : 'NULL'} ${editRowData.Extra}`
         // console.log(updateSQL)
 
         let reqData: RequestGo.RequestGoData[] = [{
@@ -242,7 +242,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
         // console.log('删除')
         // const { dbName, tableName, } = structureInfo
         // console.log(readyStructureData[editIndex], editRowData)
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} DROP COLUMN ${formatSQLSpecialChar(readyStructureData[editIndex].Field)}`
+        const updateSQL = `ALTER TABLE ${tableNameSQLStr} DROP COLUMN ${fmtSQLSpecialCh(readyStructureData[editIndex].Field)}`
         // console.log(updateSQL)
 
         let reqData: RequestGo.RequestGoData[] = [{
@@ -332,7 +332,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
         console.log(readyStructureData[editIndex], editRowData)
         // const updateSQL = `ALTER TABLE ${dbName}.${tableName} RENAME COLUMN ${readyStructureData[editIndex].Field} TO ${editRowData.Field}`
         // change语句：ALTER TABLE 表名 CHANGE 字段名 新字段名 新字段属性
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} ADD ${formatSQLSpecialChar(editRowData.Field)} ${editRowData.Type} ${editRowData.Key === 'PRI' ? 'PRIMARY KEY' : ''} ${editRowData.Null === 'NO' ? 'NOT NULL' : 'NULL'} ${editRowData.Extra}`
+        const updateSQL = `ALTER TABLE ${tableNameSQLStr} ADD ${fmtSQLSpecialCh(editRowData.Field)} ${editRowData.Type} ${editRowData.Key === 'PRI' ? 'PRIMARY KEY' : ''} ${editRowData.Null === 'NO' ? 'NOT NULL' : 'NULL'} ${editRowData.Extra}`
         console.log(updateSQL)
 
         let reqData: RequestGo.RequestGoData[] = [{
@@ -406,7 +406,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             })
             return;
         }
-        const updateSQL = `ALTER TABLE ${tableNameSQLStr} RENAME TO ${formatSQLSpecialChar(dbName!)}.${formatSQLSpecialChar(newTabName)}`
+        const updateSQL = `ALTER TABLE ${tableNameSQLStr} RENAME TO ${fmtSQLSpecialCh(dbName!)}.${fmtSQLSpecialCh(newTabName)}`
         // console.log(updateSQL)
 
         let reqData: RequestGo.RequestGoData[] = [{

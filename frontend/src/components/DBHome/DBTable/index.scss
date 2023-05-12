@@ -21,6 +21,12 @@
                 font-size: 18px;
             }
         }
+        .header_btn {
+            display: flex;
+            flex-direction: row;
+            justify-content: end;
+            align-items: center;
+        }
     }
     
     .tab_box {
@@ -50,5 +56,14 @@
             // background-color: blue;
             border-top: 1px solid rgba(5, 5, 5, .2);
         }
+    }
+}
+.header_btn {
+    display: flex;
+    flex-direction: row;
+    justify-content:flex-end;
+    align-items: center;
+    button:nth-child(2) {
+        margin-left: 20px;
     }
 }

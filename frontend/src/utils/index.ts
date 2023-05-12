@@ -1,8 +1,9 @@
 import requestGoCommon,{ operationTypes, dbOperationTypes,RequestGo } from "./requestGo";
-import {formatSQLSpecialChar} from "./format"
+import {fmtSQLSpecialCh,fmtArraySQLSpecialCh} from "./format"
 
 export {
-    formatSQLSpecialChar,
+    fmtSQLSpecialCh,
+    fmtArraySQLSpecialCh,
     requestGoCommon,
     operationTypes,
     dbOperationTypes

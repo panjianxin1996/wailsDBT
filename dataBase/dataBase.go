@@ -28,6 +28,8 @@ type EnumType int
 const (
 	GET_ALL_DATABASES EnumType = iota
 	GET_CURRENT_TABLES
+	GET_CURRENT_BASE_TABLES
+	GET_CURRENT_VIEWS
 	CUSTOM_SQL
 	EXEC_SQL
 	EXEC_AND_SELECT_SQL
@@ -77,6 +79,10 @@ func Operation(db *sql.DB, operateDataJson string) interface{} {
 		return getAllDataBase(db)
 	case GET_CURRENT_TABLES:
 		return getCurrentTables(db, operateData.CurrentDB)
+	case GET_CURRENT_BASE_TABLES:
+		return getCurrentBaseTables(db, operateData.CurrentDB)
+	case GET_CURRENT_VIEWS:
+		return getCurrentViews(db, operateData.CurrentDB)
 	case CUSTOM_SQL:
 		return getTableData(db, operateData.CustomSQL)
 	case EXEC_SQL:
@@ -191,6 +197,17 @@ func getAllDataBase(db *sql.DB) string {
 
 func getCurrentTables(db *sql.DB, currentDB string) string {
 	return queryData(db, "SHOW TABLES FROM "+currentDB)
+}
+
+func getCurrentBaseTables(db *sql.DB, currentDB string) string {
+	queryBaseTableSQL := fmt.Sprintf("SELECT `table_schema`,`table_name`,`table_type`,`create_time`,`update_time` FROM `information_schema`.`tables` WHERE (table_type = 'SYSTEM VIEW' OR table_type = 'BASE TABLE') AND table_schema = '%s'", currentDB)
+	fmt.Println(queryBaseTableSQL)
+	return queryData(db, queryBaseTableSQL)
+}
+
+func getCurrentViews(db *sql.DB, currentDB string) string {
+	queryViewSQL := fmt.Sprintf("SELECT `table_schema`,`table_name`,`table_type`,`create_time`,`update_time` FROM `information_schema`.`tables` WHERE table_type = 'VIEW' AND table_schema = '%s'", currentDB)
+	return queryData(db, queryViewSQL)
 }
 
 func getTableData(db *sql.DB, customSQL string) string {

@@ -8,12 +8,13 @@ import {
     CloseOutlined,
     ExclamationCircleOutlined,
     PlayCircleOutlined,
-    DatabaseOutlined
+    DatabaseOutlined,
+    TagOutlined
 
 } from '@ant-design/icons'
 import SQLMonacoEditor from "../../../components/Monaco/index"
 import { DBTableStructureModal, DBTabStructure, DBTableCreateTableModal, DBTabCreateTable } from "../index"
-import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo } from '../../../utils/index'
+import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo,fmtSQLSpecialCh,fmtArraySQLSpecialCh } from '../../../utils/index'
 import plantImg from '../../../assets/images/plant.png'
 import './index.scss'
 import type { DBTable } from "./DBTable"
@@ -145,9 +146,9 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
      * @param params 更新table的参数
      */
     function UpdateTable(params: DBTable.CreateTabParams): void {
-        const { dbName, tableName } = params
-        const tableStructureSQL = `DESCRIBE ${dbName}.${tableName}`
-        const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
+        const { dbName, tableName,isView } = params
+        const tableStructureSQL = `DESCRIBE ${fmtArraySQLSpecialCh([dbName,tableName])}`
+        const QuerySQL = `SELECT * FROM ${fmtArraySQLSpecialCh([dbName,tableName])}`
         let reqData: RequestGo.RequestGoData[] = [
             {
                 operType: operationTypes.DB_OPERATION,
@@ -311,9 +312,9 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
      * @returns void
      */
     function initTable(params: DBTable.CreateTabParams) {
-        const { dbName, tableName, newQuerySQL = false, querySQLStr } = params
-        const tableStructureSQL = `DESCRIBE ${dbName}.${tableName}`
-        const QuerySQL = `SELECT * FROM ${dbName}.${tableName}`
+        const { dbName, tableName, newQuerySQL = false, querySQLStr,isView } = params
+        const tableStructureSQL = `DESCRIBE ${fmtArraySQLSpecialCh([dbName,tableName])}`
+        const QuerySQL = `SELECT * FROM ${fmtArraySQLSpecialCh([dbName,tableName])}`
         let reqData: RequestGo.RequestGoData[] = [
             {
                 operType: operationTypes.DB_OPERATION,
@@ -334,7 +335,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         ]
         // 通过Promise.all 进行多接口请求并渲染表格头部、内容、tab的数据
         requestGoCommon(reqData).then(responseList => {
-            insertNewTable({ responseList, dbName, tableName, newQuerySQL, tableStructureSQL, QuerySQL })
+            insertNewTable({ responseList, dbName, tableName, newQuerySQL, tableStructureSQL, QuerySQL,isView })
         })
     }
 
@@ -344,7 +345,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
      * @returns 
      */
     function insertNewTable(newTable: DBTable.NewTable): string {
-        const { responseList, dbName, tableName, newQuerySQL, tableStructureSQL, QuerySQL, tabData } = newTable
+        const { responseList, dbName, tableName, newQuerySQL, tableStructureSQL, QuerySQL, tabData,isView } = newTable
         // 指定默认选中为当前创建的标签
         let activeTableKey: string = tableKeyword + (state.activeTableIndex).toString()
         // 结构接口返回数据
@@ -433,6 +434,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
                 label: tableName,
                 dbName,
                 tableName,
+                isView
                 // children: 
             }
 
@@ -732,11 +734,11 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         const delIndex = activeRowIndex[0]
         // 获取当前tab的primary_key 数据
         const PRILIST = primaryKeyData!.map((item: any) => {
-            return `${item.Field}='${activeRowData[item.Field]}'`
+            return `${fmtSQLSpecialCh(item.Field)}='${activeRowData[item.Field]}'`
         })
         // 获取当前选中行的键数组，需要过滤掉__key__
         const currentRowDataKeys = Object.keys(activeRowData).filter((key: string) => key !== '__key__')
-        const currentRowDataKeyAndVal = currentRowDataKeys.map(item => `${item}='${activeRowData[item]}'`)
+        const currentRowDataKeyAndVal = currentRowDataKeys.map(item => `${fmtSQLSpecialCh(item)}='${activeRowData[item]}'`)
         /**
          * 这里要处理多个问题：
          * 1.当主键不唯一有多个（已解决）
@@ -744,7 +746,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
          * 3.没有主键的情况（已解决）
          * 4.没有主键的情况下，修改的数据只能对一条进行修改，不能导致全部数据被修改（已解决）
          */
-        const updateSQL = PRILIST.length > 0 ? `DELETE FROM ${dbName}.${tableName} WHERE ${PRILIST.join(' AND ')}` : `DELETE FROM ${dbName}.${tableName} WHERE ${currentRowDataKeyAndVal.join(' AND ')} LIMIT 1`
+        const updateSQL = PRILIST.length > 0 ? `DELETE FROM ${fmtArraySQLSpecialCh([dbName,tableName])} WHERE ${PRILIST.join(' AND ')}` : `DELETE FROM ${fmtArraySQLSpecialCh([dbName,tableName])} WHERE ${currentRowDataKeyAndVal.join(' AND ')} LIMIT 1`
 
         let reqData: RequestGo.RequestGoData[] = [{
             operType: operationTypes.DB_OPERATION,
@@ -916,11 +918,11 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
             return `${item.Field}='${getActiveTabHandle()?.activeRowData[item.Field]}'`
         })
 
-        const updateArray = Object.keys(formData).map(item => `${item}='${formData[item]}'`)
+        const updateArray = Object.keys(formData).map(item => `${fmtSQLSpecialCh(item)}='${formData[item]}'`)
 
         // 获取当前选中行的键数组，需要过滤掉__key__
         const currentRowDataKeys = Object.keys(activeRowData).filter((key: string) => key !== '__key__')
-        const currentRowDataKeyAndVal = currentRowDataKeys.map(item => `${item}='${activeRowData[item]}'`)
+        const currentRowDataKeyAndVal = currentRowDataKeys.map(item => `${fmtSQLSpecialCh(item)}='${activeRowData[item]}'`)
         /**
          * 这里要处理多个问题：
          * 1.当主键不唯一有多个 （已解决）
@@ -928,8 +930,8 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
          * 3.没有主键的情况
          * 4.没有主键的情况下，修改的数据只能对一条进行修改，不能导致全部数据被修改
          */
-        const updateSQL = PRILIST?.length > 0 ? `UPDATE ${dbName}.${tableName} SET ${updateArray.join(',')} WHERE ${PRILIST?.join(' AND ')}` : `UPDATE ${dbName}.${tableName} SET ${updateArray.join(',')} WHERE ${currentRowDataKeyAndVal?.join(' AND ')} LIMIT 1`
-
+        const updateSQL = PRILIST?.length > 0 ? `UPDATE ${fmtArraySQLSpecialCh([dbName,tableName])} SET ${updateArray.join(',')} WHERE ${PRILIST?.join(' AND ')}` : `UPDATE ${fmtArraySQLSpecialCh([dbName,tableName])} SET ${updateArray.join(',')} WHERE ${currentRowDataKeyAndVal?.join(' AND ')} LIMIT 1`
+        // console.log(updateSQL)
         let reqData: RequestGo.RequestGoData[] = [{
             operType: operationTypes.DB_OPERATION,
             connDBId,
@@ -1070,13 +1072,13 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         // const PRIValue = PRI && getActiveTabHandle()?.activeRowData[PRI]
         // 获取主键名和主键内容拼接
         const PRILIST = state.activeTableData.primaryKeyData?.map((item: any) => {
-            return `${item.Field}='${getActiveTabHandle()?.activeRowData[item.Field]}'`
+            return `${fmtSQLSpecialCh(item.Field)}='${getActiveTabHandle()?.activeRowData[item.Field]}'`
         })
-        const tableKeys = Object.keys(formData).join(',')
+        const tableKeys = Object.keys(formData).map(item=>fmtSQLSpecialCh(item)).join(',')
         const tableRowData = Object.values(formData).map(item => {
             return item === undefined ? 'null' : `'${item}'`
         }).join(',')
-        const insertSQL = `INSERT INTO ${dbName}.${tableName} (${tableKeys}) VALUES (${tableRowData});`
+        const insertSQL = `INSERT INTO ${fmtArraySQLSpecialCh([dbName,tableName])} (${tableKeys}) VALUES (${tableRowData});`
         let reqData: RequestGo.RequestGoData[] = [{
             operType: operationTypes.DB_OPERATION,
             connDBId,
@@ -1186,17 +1188,20 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
                                     <p className='header_title'>
                                         <Tag icon={<DatabaseOutlined />} color='#2db7f5' className='title_db_name' >{state.activeTableData?.dbName}</Tag>
                                         <span className='title_table_name'>{state.activeTableData?.tableName}</span>
+                                        {
+                                            getActiveTabHandle()?.isView && <Tag icon={<TagOutlined />} style={{marginLeft: "20px"}}>视图</Tag>
+                                        }
                                     </p>
                                 </Col>
                             </Row>
                         </Col>
                         <Col span={6}>
-                            <Space >
+                            <div className='header_btn'>
                                 {
                                     !getActiveTabHandle()?.newQuerySQL && <Button type="primary" onClick={() => { DBTabStructureRef.current?.ToggleModalEvent() }}>编辑表结构</Button>
                                 }
                                 <Button type="primary" onClick={() => { DBTabCreateTableRef.current?.ToggleModalEvent() }}>创建新表</Button>
-                            </Space>
+                            </div>
                         </Col>
                     </Row>
                     {/* 表标签页 */}
@@ -1275,7 +1280,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
                 </div>
                 :
                 // 欢迎界面
-                <div style={{ padding: "20px" }}>
+                <div style={{ padding: "10px" }}>
                     <Row style={{ padding: "20px 0" }}>
                         <Col span={18}>
                             <Avatar className='table_avatar' src={<img src={plantImg} alt='欢迎！' />} shape="square" size={50} />
@@ -1283,7 +1288,9 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
                             <span>欢迎您的使用</span>
                         </Col>
                         <Col span={6}>
-                            <Button type="primary" onClick={() => { DBTabCreateTableRef.current?.ToggleModalEvent() }}>创建新表</Button>
+                            <div className='header_btn'>
+                                <Button type="primary" onClick={() => { DBTabCreateTableRef.current?.ToggleModalEvent() }}>创建新表</Button>
+                            </div>
                         </Col>
                     </Row>
                     <p>你可以通过选中左侧菜单来进行操作你的数据库。</p>

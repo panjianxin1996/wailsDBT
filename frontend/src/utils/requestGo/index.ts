@@ -41,6 +41,7 @@ const requestGoCommon = async function (reqDataList: RequestGo.RequestGoData[]) 
              * @param data 操作数据库的命令参数
              */
             case operationTypes.DB_OPERATION:
+                console.log(item.data)
                 requestStack.push(item.connDBId && GoOperateDB(item.connDBId, JSON.stringify({...item.data})))
                 break
         }

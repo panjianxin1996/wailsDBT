@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons'
 import type { DBTabCreateTable } from './DBTableCreateTableModal';
 import { useForm } from 'antd/es/form/Form';
-import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, formatSQLSpecialChar } from '../../../../utils/index'
+import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, fmtSQLSpecialCh } from '../../../../utils/index'
 import {
     GoMysqlDataBase,
 } from '../../../DBHome'
@@ -347,11 +347,11 @@ const DBTableCreateTableModal = forwardRef<DBTabCreateTable.DBTabCreateTableRef,
             })
             return;
         }
-        const dbAndTabName = `${formatSQLSpecialChar(activeDBName!)}.${formatSQLSpecialChar(tableName)}`
+        const dbAndTabName = `${fmtSQLSpecialCh(activeDBName!)}.${fmtSQLSpecialCh(tableName)}`
         const PRIList:string[] = []
         const fieldColList = readyStructureData.map((item:any)=>{
-            if (item["Key"] === "PRI") PRIList.push(formatSQLSpecialChar(item["Field"]))
-            return `${formatSQLSpecialChar(item["Field"])} ${item["Type"]} ${item['Null']==='YES'?'NULL':'NOT NULL'} ${item['Extra']==='auto_increment'?'auto_increment':''}`
+            if (item["Key"] === "PRI") PRIList.push(fmtSQLSpecialCh(item["Field"]))
+            return `${fmtSQLSpecialCh(item["Field"])} ${item["Type"]} ${item['Null']==='YES'?'NULL':'NOT NULL'} ${item['Extra']==='auto_increment'?'auto_increment':''}`
         })
         const PRIStr = PRIList.length > 0 ? `,PRIMARY KEY (${PRIList.join(',')})`:''
         const createTableSQL = `CREATE TABLE ${dbAndTabName} (${fieldColList.join(',')} ${PRIStr})`

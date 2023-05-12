@@ -1,4 +1,5 @@
-import formatSQLSpecialChar from "./formatSQLSpecialChar";
+import {formatSQLSpecialChar as fmtSQLSpecialCh,formatArraySQLSpecialChar as fmtArraySQLSpecialCh} from "./formatSQLSpecialChar";
 export {
-    formatSQLSpecialChar,
+    fmtSQLSpecialCh,
+    fmtArraySQLSpecialCh,
 }

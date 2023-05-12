@@ -1,24 +1,18 @@
-declare interface GoMysqlTables {
-    [name:string]: string
-}
-declare interface GoMysqlDataBase {
-    Database: string
-}
-declare interface DatabaseMenu {
-    key: string,
-    icon?: any,
-    label: string,
-    children?: DatabaseMenu[]
-}
-declare interface DataBaseList {
-    databases?: Array<GoMysqlDataBase>,
-    onSelectEvent?: (index: number) => void
-}
-
-export {
-    GoMysqlTables,
-    GoMysqlDataBase,
-    DatabaseMenu,
-    DataBaseList
-
+export namespace DBHome {
+    interface GoMysqlTables {
+        [name:string]: string
+    }
+    interface GoMysqlDataBase {
+        Database: string
+    }
+    interface DatabaseMenu {
+        key: string,
+        icon?: any,
+        label: string,
+        children?: DatabaseMenu[]
+    }
+    interface DataBaseList {
+        databases?: Array<GoMysqlDataBase>,
+        onSelectEvent?: (index: number) => void
+    }
 }
