@@ -11,6 +11,7 @@ import type { DBTabStructure } from './DBTableStructureModal';
 import { useForm } from 'antd/es/form/Form';
 import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo, fmtSQLSpecialCh } from '../../../../utils/index'
 import './index.scss';
+import { DBTable } from '../DBTable';
 const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTabStructure.Props>((props, ref) => {
     const { structureData, structureInfo, connDBId, UpdateTableStructureData, AddMessage,RealoadData } = props;
     const { dbName, tableName } = structureInfo;
@@ -118,7 +119,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
             }
         },
     ];
-    const [readyStructureData, setReadyStructureData] = useState(structureData)
+    const [readyStructureData, setReadyStructureData] = useState<DBTable.TableDataItem[]>(structureData?.map((item:DBTable.TableDataItem,index:number)=>{return {...item,__key__:"structure-table-"+index}}))
     // const [structureForm] = useForm();
     const editTabNameInput =useRef(null);
     useImperativeHandle(ref, () => ({
@@ -129,7 +130,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
     // console.log(readyStructureData)
 
     useEffect(() => {
-        setReadyStructureData(structureData)
+        setReadyStructureData(structureData?.map((item:DBTable.TableDataItem,index:number)=>{return {...item,__key__:"structure-table-"+index}}))
         // structureForm.setFieldsValue({
         //     table: structureData
         // })
@@ -430,9 +431,9 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
                 })
             } else {
                 AddMessage({
-                    type: 'warning',
-                    duration: 1,
-                    content: '修改表名失败了，请稍候重试',
+                    type: 'error',
+                    duration: 0,
+                    content: '修改表名失败了，请稍候重试'+backData.errorMsg,
                 })
             }
             
@@ -448,6 +449,7 @@ const DBTableStructureModal = forwardRef<DBTabStructure.DBTabStructureRef, DBTab
         >
             <Form.Item name="table" valuePropName='dataSource'> */}
         <Table
+            rowKey="__key__"
             className='structure_table'
             columns={structureColumns}
             dataSource={readyStructureData}

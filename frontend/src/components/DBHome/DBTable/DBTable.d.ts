@@ -1,7 +1,8 @@
 import React, { ReactNode } from "react";
 import type { monacoEditor } from "../../Monaco";
 import type { ColumnsType } from 'antd/es/table';
-import type { NoticeType } from 'antd/es/message/interface'
+import type { NoticeType } from 'antd/es/message/interface';
+import type { TourProps } from 'antd';
 import {
     GoMysqlDataBase,
 } from '../../DBHome'
@@ -24,13 +25,19 @@ export namespace DBTable {
          * 数据库列表
          */
         databases: GoMysqlDataBase[] | undefined;
+        /**
+         * 传递给顶层组件DBTable，启动引导页
+         * @param stepsData 引导数据
+         * @returns 
+         */
+        openTourEvent: (i:number,stepsData:TourProps['steps'])=>void;
     }
 
     interface ShowDBTableRef {
         [x: string]: any;
-        state: State,
-        CreateTable: (params: DBTable.CreateTabParams)=>void
-        UpdateTable: (params: DBTable.CreateTabParams)=>void
+        state: State;
+        CreateTable: (params: DBTable.CreateTabParams)=>void;
+        UpdateTable: (params: DBTable.CreateTabParams)=>void;
     }
 
     interface State {
@@ -104,7 +111,7 @@ export namespace DBTable {
     }
 
     interface TableDataItem {
-        [content:string]: string; // 表格数据可能为任意名称键和字符串值
+        [content:string]: any; // 表格数据可能为任意名称键和字符串值
     }
 
     interface DBReducerAction {

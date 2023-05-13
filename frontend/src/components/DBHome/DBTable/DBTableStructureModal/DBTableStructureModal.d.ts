@@ -8,7 +8,7 @@ export namespace DBTabStructure {
         /**
          * 表结构数据
          */
-        structureData: any;
+        structureData: DBTable.TableDataItem[];
         /**
          * 数据库连接句柄
          */

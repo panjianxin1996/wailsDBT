@@ -8,7 +8,8 @@ import {
     FieldTimeOutlined,
     SearchOutlined
 } from '@ant-design/icons'
-import { Layout, Menu, theme, Card, MenuProps, Space, Popover, Button, Input, Row, Col, Avatar } from 'antd'
+import { Layout, Menu, theme, Card, MenuProps, Space, Popover, Button, Input, Row, Col, Avatar, Tour } from 'antd'
+import type { TourProps } from 'antd';
 import type { DBHome } from './DBHome'
 import { DBTable, SelectDBList, ShowDBTable } from "../../components/DBHome/index"
 import SQLMonacoEditor, { monacoEditor } from "../../components/Monaco/index"
@@ -53,10 +54,25 @@ function DBHomePage() {
     const [databaseTables, setDatabaseTables] = useState<DBHome.GoMysqlTables[]>()
     // 文本框
     const [text, setText] = useState('')
+    // 打开引导
+    const [openTour,setOpenTour] = useState(false)
+    const [stepsData,setStepsData] = useState<TourProps['steps']>([])
     // 用useReducer处理数据库信息
     const [allDBState, setAllDBstate] = useState<monacoEditor.Hints>({})
     // 
     let ShowDBTableRef = useRef<DBTable.ShowDBTableRef>(null)
+
+    const tourRef1 = useRef(null)
+    const tourRef2 = useRef(null)
+    const tourRef3 = useRef(null)
+
+    const steps: TourProps['steps'] = [
+        {
+            target: ()=>tourRef1.current,
+            title: '',
+            description: 'Put your files here.',
+        },
+    ]
 
     /**
      * 获取到所有的数据库和数据库中的表集合传递给monacoEditor组件用于输入提示
@@ -266,6 +282,31 @@ function DBHomePage() {
         ShowDBTableRef.current?.CreateTable({ newQuerySQL: true, querySQLStr })
     }
 
+    function openTourEvent (i:number,stepsData: TourProps['steps']) {
+        if (!stepsData) {
+            return
+        }
+        switch(i){
+            case 0:
+                stepsData[0].target = (()=>tourRef1.current);
+            break
+            case 1:
+                stepsData[0].target = (()=>tourRef2.current);
+            break
+            case 2:
+                stepsData[0].target = (()=>tourRef2.current);
+            break
+            case 3:
+                stepsData[0].target = (()=>tourRef3.current);
+            break
+            case 4:
+                // stepsData[0].target = (()=>ShowDBTableRef.current?.CreateTableBtn);
+            break
+        }
+        setStepsData(stepsData);
+        setOpenTour(true);
+    }
+
     return (
         <Layout className='main_box'>
             <Content className='content_box'>
@@ -281,7 +322,7 @@ function DBHomePage() {
                             content={<SelectDBList databases={databases} onSelectEvent={onSelectDBListEvent} />}
                             trigger="click"
                         >
-                            <div className='card_box flex_col flex_just_center'>
+                            <div className='card_box flex_col flex_just_center' ref={tourRef1}>
                                 <div className='select_card'>
                                     <p className='select_card_via'>
                                         <DatabaseOutlined style={{ fontSize: "24px" }} />
@@ -291,18 +332,22 @@ function DBHomePage() {
                                 </div>
                             </div>
                         </Popover>
-                        <Menu
-                            className='sider_menu_box'
-                            mode="inline"
-                            // onSelect={onMenuSelect}
-                            onClick={onMenuSelect}
-                            // style={{ height: "500px",overflow: 'scroll' }}
-                            items={databaseMenu}
-                        />
+                        <div ref={tourRef2}>
+                            <Menu
+                                
+                                className='sider_menu_box'
+                                mode="inline"
+                                // onSelect={onMenuSelect}
+                                onClick={onMenuSelect}
+                                // style={{ height: "500px",overflow: 'scroll' }}
+                                items={databaseMenu}
+                            />
+                        </div>
+                        
                     </Sider>
                     {/* 右主框 */}
                     <Content className='right_content' style={{ minHeight: 280 }}>
-                        <div className='content_search_box flex_col flex_just_center'>
+                        <div className='content_search_box flex_col flex_just_center' ref={tourRef3}>
                             <Input.Search
                                 prefix={<SearchOutlined className='search_input_icon' />}
                                 bordered={false} placeholder='您可以输入SQL语句或者创建一个空白的查询框。'
@@ -315,12 +360,14 @@ function DBHomePage() {
                                 value={text}
                                 hintData={allDBState}
                             /> */}
-                            <ShowDBTable RealoadData={RealoadData} ref={ShowDBTableRef} databases={databases} connDBId={connectId} hintDBData={allDBState} />
+                            <ShowDBTable RealoadData={RealoadData} ref={ShowDBTableRef} databases={databases} openTourEvent={(i,steps)=>openTourEvent(i,steps)} connDBId={connectId} hintDBData={allDBState} />
                         </div>
                         {/* <Button onClick={()=>console.log(databaseMenu)}>1111</Button> */}
                     </Content>
                 </Layout>
             </Content>
+            {/* <Button onClick={()=>{setOpenTour(true)}}>click</Button> */}
+            <Tour open={openTour} onClose={() => setOpenTour(false)} steps={stepsData} />
         </Layout>
     )
 }

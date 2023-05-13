@@ -201,7 +201,6 @@ func getCurrentTables(db *sql.DB, currentDB string) string {
 
 func getCurrentBaseTables(db *sql.DB, currentDB string) string {
 	queryBaseTableSQL := fmt.Sprintf("SELECT `table_schema`,`table_name`,`table_type`,`create_time`,`update_time` FROM `information_schema`.`tables` WHERE (table_type = 'SYSTEM VIEW' OR table_type = 'BASE TABLE') AND table_schema = '%s'", currentDB)
-	fmt.Println(queryBaseTableSQL)
 	return queryData(db, queryBaseTableSQL)
 }
 

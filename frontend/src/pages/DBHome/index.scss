@@ -17,6 +17,8 @@
             // Override Antd Menu sub item max-height
             .sider_menu_box {
                 border-inline-end: none;
+                height: calc(100vh - 130px);
+                overflow: scroll;
                 .ant-menu.ant-menu-sub.ant-menu-inline {
                     max-height: 400px;
                     overflow: scroll;

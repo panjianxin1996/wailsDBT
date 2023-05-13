@@ -1,5 +1,5 @@
-import { Avatar, Button, Col, Form, Input, Modal, Row, Space, Table, Tabs, Tag, message, notification } from 'antd'
-import React, { forwardRef, useEffect, useImperativeHandle, useReducer, useRef } from 'react'
+import { Avatar, Button, Col, Form, Input, Modal, Row, Space, Table, Tabs, Tag, message, notification,Typography } from 'antd';
+import React, { forwardRef, useEffect, useImperativeHandle, useReducer, useRef } from 'react';
 import {
     EditOutlined,
     PlusCircleOutlined,
@@ -11,17 +11,19 @@ import {
     DatabaseOutlined,
     TagOutlined
 
-} from '@ant-design/icons'
-import SQLMonacoEditor from "../../../components/Monaco/index"
-import { DBTableStructureModal, DBTabStructure, DBTableCreateTableModal, DBTabCreateTable } from "../index"
-import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo,fmtSQLSpecialCh,fmtArraySQLSpecialCh } from '../../../utils/index'
-import plantImg from '../../../assets/images/plant.png'
-import './index.scss'
-import type { DBTable } from "./DBTable"
-import { ColumnsType } from 'antd/es/table'
+} from '@ant-design/icons';
+import SQLMonacoEditor from "../../../components/Monaco/index";
+import { DBTableStructureModal, DBTabStructure, DBTableCreateTableModal, DBTabCreateTable,DBIntro } from "../index";
+import { requestGoCommon, operationTypes, dbOperationTypes, RequestGo,fmtSQLSpecialCh,fmtArraySQLSpecialCh } from '../../../utils/index';
+import plantImg from '../../../assets/images/plant.png';
+import './index.scss';
+import type { DBTable } from "./DBTable";
+import { ColumnsType } from 'antd/es/table';
+
+const { Title, Paragraph, Text, Link } = Typography;
 
 const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, ref) => {
-    const { connDBId, hintDBData, databases, RealoadData } = props
+    const { connDBId, hintDBData, databases, RealoadData,openTourEvent } = props
 
     const tableKeyword = 'tab_'
 
@@ -466,6 +468,9 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         return activeTableKey;
     }
 
+    /**
+     * 暴露出更新表结构的方法 主要是暴露给子组件，当子组件操作数据库表结构后，需要更新父组件的表结构内容
+     */
     function UpdateTableStructureData(): void {
         let tabHandle = getActiveTabHandle()!
         let reqData: RequestGo.RequestGoData[] = [
@@ -726,6 +731,9 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         })
     }
 
+    /**
+     * 确认删除操作
+     */
     function onConfirmOkEvent(): void {
         const currentTableHandle = getActiveTabHandle()!
         const { activeRowData, activeRowIndex } = currentTableHandle
@@ -1003,7 +1011,11 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         })
     }
 
-    function newQuerySQLRunEvent() {
+    /**
+     * 点击运行按钮执行sql命令
+     * @returns void
+     */
+    function newQuerySQLRunEvent():void {
         // 执行自定义查询
         if (!state.customQuerySQL) {
             return;
@@ -1054,6 +1066,17 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
                         tableObjectArray: newTableObjArray
                     }
                 });
+                AddMessage({
+                    type: 'success',
+                    duration: 1,
+                    content: "执行成功！"
+                })
+            } else {
+                AddMessage({
+                    type: 'error',
+                    duration: 0,
+                    content: backData.errorMsg
+                })
             }
         })
     }
@@ -1130,14 +1153,14 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
         })
     }
 
-    return <div>
+    return <div className='dbtable_main_box'>
         {/* 消息框框 */}
         {messageContextHolder}
         {/* 提示框 */}
         {notificationContextHolder}
         {/* 确认框 */}
         {modalContextHolder}
-        <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} structureData={getActiveTabHandle()?.tableColumnsSource} RealoadData={RealoadData} UpdateTableStructureData={UpdateTableStructureData} AddMessage={AddMessage} />
+        <DBTableStructureModal ref={DBTabStructureRef} connDBId={connDBId} structureInfo={state.activeTableData} structureData={getActiveTabHandle()?.tableColumnsSource as DBTable.TableDataItem[]} RealoadData={RealoadData} UpdateTableStructureData={UpdateTableStructureData} AddMessage={AddMessage} />
         <DBTableCreateTableModal ref={DBTabCreateTableRef} connDBId={connDBId} structureData={[]} RealoadData={RealoadData} AddMessage={AddMessage} databases={databases} />
         {
             state.tableObjectArray.length > 0 ?
@@ -1176,8 +1199,6 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
                             </div>
                         </Modal>
                     }
-
-
                     <Row className='tab_header' align='middle'>
                         <Col span={18}>
                             <Row align='middle'>
@@ -1279,22 +1300,7 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
 
                 </div>
                 :
-                // 欢迎界面
-                <div style={{ padding: "10px" }}>
-                    <Row style={{ padding: "20px 0" }}>
-                        <Col span={18}>
-                            <Avatar className='table_avatar' src={<img src={plantImg} alt='欢迎！' />} shape="square" size={50} />
-
-                            <span>欢迎您的使用</span>
-                        </Col>
-                        <Col span={6}>
-                            <div className='header_btn'>
-                                <Button type="primary" onClick={() => { DBTabCreateTableRef.current?.ToggleModalEvent() }}>创建新表</Button>
-                            </div>
-                        </Col>
-                    </Row>
-                    <p>你可以通过选中左侧菜单来进行操作你的数据库。</p>
-                </div>
+                <DBIntro ToggleModalEvent={DBTabCreateTableRef.current?.ToggleModalEvent} openTourEvent={openTourEvent}/>
         }
 
     </div>
