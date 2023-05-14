@@ -1,5 +1,5 @@
-import { Input, Layout, Spin } from "antd";
-import { ProjectTwoTone, SearchOutlined, EditOutlined } from '@ant-design/icons';
+import { Button, Dropdown, Input, Layout, MenuProps, Select, Space, Spin } from "antd";
+import { ProjectTwoTone, SearchOutlined, EditOutlined, UserOutlined, SettingOutlined } from '@ant-design/icons';
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { DBListCard, DBListRegisterModal, DBListCardProps, DBListRegister } from '../../components/DBList';
 import { useNavigate } from "react-router-dom";
@@ -19,11 +19,23 @@ const ConnectDB: React.FC = () => {
     const [dbList, setDBList] = useState<DBListCardProps[]>(storageDBList);
     const [spinning, setSpinning] = useState<boolean>(false);
     const [spinningTips, setSpinningTips] = useState<string>('');
+    const [dbListSelectOption, setDBListSelectOption] = useState<any>([])
 
     // const [connDBList, setConnDBList] = useState<DBList.connDBInfo[]>([]);
     // 通过context存储全部登录的数据库信息
     const context = useContext(AppContext);
     const registerRef = useRef<DBListRegister.DBListRegisterRef>(null)
+    const items: MenuProps['items'] = [
+        {
+            label: '关于我们',
+            key: 'drop-down-menu-1',
+            icon: <UserOutlined />,
+        },
+    ];
+    const menuProps = {
+        items,
+        onClick: handleMenuClick,
+    }
     // console.log(context)
 
 
@@ -163,7 +175,27 @@ const ConnectDB: React.FC = () => {
 
     useEffect(() => {
         // console.log(dbList)
+        const newDBListSelectOption = dbList.map(item => {
+            // console.log(item)
+            return {
+                value: <div>{item.dbName}<Button>连接</Button></div>,
+                lable: item.dbName,
+            }
+        })
+        setDBListSelectOption(newDBListSelectOption)
     }, [dbList])
+
+    function handleButtonClick() {
+        console.log('触发1')
+    }
+
+    function handleMenuClick(e: any) {
+        console.log('触发2', e)
+    }
+
+    function onSelectSearchEvent(e: any) {
+        console.log(e)
+    }
 
 
 
@@ -177,17 +209,43 @@ const ConnectDB: React.FC = () => {
                         <span className="logo_txt">DBMT</span>
                     </p>
                     <div className="header_input_box">
-                        <Input
+                        <Select
+                            showSearch
+                            placeholder="请输入需要查询的数据库名"
+                            optionFilterProp="children"
+                            className="header_input"
+                            bordered={false}
+                            onChange={onSelectSearchEvent}
+                            // onSearch={onSelectSearchEvent}
+                            // filterOption={(input, option) =>
+                            //     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            // }
+                            // options={dbListSelectOption}
+                            optionLabelProp="value"
+                        >
+                            {
+                                dbList.map((item:any,index:number) => {
+                                    return <Select.Option value={item.dbName} label={item.dbName} key={"select-option-"+index}>
+                                        <Space>
+                                            <span aria-label={item.dbName}>{item.dbName}</span>
+                                            <Button>连接</Button>
+                                        </Space>
+                                    </Select.Option>
+                                })
+                            }
+                            
+                        </Select>
+                        {/* <Input
                             prefix={<SearchOutlined style={{ color: '#95a8b2', fontSize: '16px' }} />}
                             suffix={<EditOutlined style={{ color: '#95a8b2', fontSize: '16px' }} />}
                             className="header_input"
                             bordered={false}
-                            placeholder="搜索连接的数据库"></Input>
+                            placeholder="搜索连接的数据库"></Input> */}
                     </div>
 
                 </div>
                 <div className="header_right_box">
-                    <p>user</p>
+                    <Dropdown.Button menu={menuProps} onClick={handleButtonClick}><SettingOutlined /></Dropdown.Button>
                 </div>
 
             </div>

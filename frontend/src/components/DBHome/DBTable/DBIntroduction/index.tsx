@@ -4,6 +4,7 @@ import './index.scss'
 import { Avatar, Button, Col, Row, Typography } from 'antd';
 // import plantImg from '../../../../assets/images/plant.png';
 import plantImg from '@/assets/images/plant.png';
+import introImg from '@/assets/images/introduction_cover3.png';
 const { Title, Paragraph, Text, Link } = Typography;
 const DBIntro = forwardRef<DBIntroduction.DBIntroductionRef,DBIntroduction.Props>((props,ref)=>{
     const {ToggleModalEvent,openTourEvent} = props
@@ -79,6 +80,7 @@ const DBIntro = forwardRef<DBIntroduction.DBIntroductionRef,DBIntroduction.Props
             </Col>
         </Row>
         <Typography>
+            <img className='intro_img' src={introImg} alt="introduction" />
             <Title>介绍</Title>
             <Paragraph>
                 <ul>

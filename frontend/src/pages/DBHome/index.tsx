@@ -231,7 +231,7 @@ function DBHomePage() {
         let resultList = backData.dataList
         let tables = resultList.map((item: DBHome.GoMysqlTables, index: number) => {
             const tableKey = currentDB + '/' + item[`TABLE_NAME`]
-            return { key: tableKey, label: item[`TABLE_NAME`], icon: <TableOutlined /> }
+            return { key: tableKey, label: item[`TABLE_NAME`], icon: <TableOutlined />,title: item[`TABLE_NAME`] }
         })
         return {key: "menu_0", children: tables}
     }
@@ -259,7 +259,7 @@ function DBHomePage() {
         let resultList = backData.dataList;
         let tables = resultList.map((item: DBHome.GoMysqlTables, index: number) => {
             const tableKey = currentDB + '/' + item[`TABLE_NAME`]
-            return { key: tableKey, label: item[`TABLE_NAME`], icon: <InsertRowBelowOutlined /> }
+            return { key: tableKey, label: item[`TABLE_NAME`], icon: <InsertRowBelowOutlined />,title: item[`TABLE_NAME`] }
         })
         return {key: "menu_1", children: tables}
     }
@@ -341,6 +341,7 @@ function DBHomePage() {
                                 onClick={onMenuSelect}
                                 // style={{ height: "500px",overflow: 'scroll' }}
                                 items={databaseMenu}
+                                
                             />
                         </div>
                         
