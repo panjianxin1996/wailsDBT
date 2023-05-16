@@ -9,5 +9,12 @@
   "author": {
     "name": "潘健鑫",
     "email": "1164113583@qq.com"
+  },
+  "Info": {
+    "companyName": "panjianxin.top",
+    "productName": "DataBaseManagementTools",
+    "productVersion": "1.0.0",
+    "copyright": "------",
+    "comments": "First build windows app."
   }
 }
