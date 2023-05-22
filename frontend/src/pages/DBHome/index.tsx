@@ -229,9 +229,11 @@ function DBHomePage() {
         const responseList = await requestGoCommon(reqData)
         const [backData] = responseList;
         let resultList = backData.dataList
+        // console.log(resultList)
         let tables = resultList.map((item: DBHome.GoMysqlTables, index: number) => {
-            const tableKey = currentDB + '/' + item[`TABLE_NAME`]
-            return { key: tableKey, label: item[`TABLE_NAME`], icon: <TableOutlined />,title: item[`TABLE_NAME`] }
+            const tmpTableName = item[`TABLE_NAME`] ? item[`TABLE_NAME`] : item[`table_name`]
+            const tableKey = currentDB + '/' + tmpTableName
+            return { key: tableKey, label: tmpTableName, icon: <TableOutlined />,title: tmpTableName }
         })
         return {key: "menu_0", children: tables}
     }
@@ -258,8 +260,9 @@ function DBHomePage() {
         const [backData] = responseList;
         let resultList = backData.dataList;
         let tables = resultList.map((item: DBHome.GoMysqlTables, index: number) => {
-            const tableKey = currentDB + '/' + item[`TABLE_NAME`]
-            return { key: tableKey, label: item[`TABLE_NAME`], icon: <InsertRowBelowOutlined />,title: item[`TABLE_NAME`] }
+            const tmpTableName = item[`TABLE_NAME`] ? item[`TABLE_NAME`] : item[`table_name`]
+            const tableKey = currentDB + '/' + tmpTableName
+            return { key: tableKey, label: tmpTableName, icon: <InsertRowBelowOutlined />,title: tmpTableName }
         })
         return {key: "menu_1", children: tables}
     }

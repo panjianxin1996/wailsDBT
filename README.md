@@ -16,3 +16,17 @@
 ### 技术选型
 
 
+### 开发脚本
+```js
+// 启动项目
+wails dev
+```
+```js
+//构件项目
+wails build
+```
+```js
+//构建项目基于nsis
+wails build -nsis
+```
+

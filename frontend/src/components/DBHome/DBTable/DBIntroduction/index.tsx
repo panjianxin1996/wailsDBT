@@ -97,12 +97,12 @@ const DBIntro = forwardRef<DBIntroduction.DBIntroductionRef,DBIntroduction.Props
             <Title>可能遇到的问题</Title>
             <Paragraph>
                 <h4>Q：为什么我可以对视图进行操作？</h4>
-                <pre>
+                <blockquote>
                     <Text>A：对于一般关系型数据库来说，视图 (view) 只是基于表 (table) 上的虚拟表 (virtual table)。视图的定义会引用其所关联的基础表，从而使得从视图中读取数据时，实际上是从与视图关联的基础表中获取数据，因此可以保证视图中的数据最终与基础表同步。</Text>
                     <Text>例如，当您在视图中执行 INSERT 操作时，实际上是在与该视图关联的基础表中插入了一行数据。 当您在视图中执行 UPDATE 或 DELETE 操作时，实际上也是在与该视图关联的基础表中更新或删除了相应的行。</Text>
                     <Text>而当您看到视图产生的变化时，并不是因为视图本身发生了变化，而是因为您对视图进行操作所引发的基础表的变化（因为视图本身并没有自己的物理存储，所以无法对视图进行物理修改）。</Text>
                     <Text>需要注意的是，在MySQL中，大部分情况下视图是只读的，不能直接对视图进行修改。如果需要修改视图的数据，则需要修改与视图相关的基础表数据。视图通常只能用于读操作，方便我们查询和过滤数据。</Text>
-                </pre>
+                </blockquote>
                 <h4>Q：对于我这个SQL语句应该是没有问题的，为什么无法查询出数据？<Text code>SELECT * FROM `myTableName`</Text>;</h4>
                 <blockquote>
                     A：不同于你的执行环境，DBMT可能并不知道你所需要查询的数据表在哪个数据库中，虽然我们已经可能在数据库栏选择了，但是我们还可能查询其他数据库下的数据表。你应该这么做<Text code copyable={{ tooltips: false }}>SELECT * FROM `myDBName`.`myTableName`</Text>
