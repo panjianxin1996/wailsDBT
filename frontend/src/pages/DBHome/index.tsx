@@ -200,10 +200,12 @@ function DBHomePage() {
      */
     function RealoadData(tableKey?: string):void {
         if (!tableKey) {
-            onSelectDBListEvent(activeDBIndex) // 重新选中数据库
+            // onSelectDBListEvent(activeDBIndex) // 重新选中数据库
+            updateAllDBData()
             return;
         } 
-        onSelectDBListEvent(activeDBIndex) // 重新选中数据库
+        // onSelectDBListEvent(activeDBIndex) // 重新选中数据库
+        updateAllDBData()
         const [dbName, tableName] = tableKey.split('/') // 获取更新后的数据库以及表名称
         ShowDBTableRef.current?.UpdateTable({ dbName, tableName })
     }

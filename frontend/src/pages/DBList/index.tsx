@@ -8,6 +8,7 @@ import requestGoCommon, { RequestGo, operationTypes, dbOperationTypes } from '..
 import './index.scss';
 
 const { Content } = Layout;
+let cardKey = 0;
 
 const ConnectDB: React.FC = () => {
     // 获取存储连接的数据库配置信息到localStorage中
@@ -19,7 +20,7 @@ const ConnectDB: React.FC = () => {
     const [dbList, setDBList] = useState<DBListCardProps[]>(storageDBList);
     const [spinning, setSpinning] = useState<boolean>(false);
     const [spinningTips, setSpinningTips] = useState<string>('');
-    const [dbListSelectOption, setDBListSelectOption] = useState<any>([])
+    const [dbListSelectOption, setDBListSelectOption] = useState<any>([]);
 
     // const [connDBList, setConnDBList] = useState<DBList.connDBInfo[]>([]);
     // 通过context存储全部登录的数据库信息
@@ -59,7 +60,7 @@ const ConnectDB: React.FC = () => {
      */
     async function AddDataBase(dbConifg: DBListCardProps): Promise<void> {
         // { dbname, dbcontent, username,password,host,port, type: 0 }
-        let changeDBList = [{ ...dbConifg }, ...dbList]
+        let changeDBList = [...dbList,{ ...dbConifg }]
         console.log(changeDBList)
         setDBList(changeDBList)
         localStorage.setItem('my_db_list', JSON.stringify(changeDBList))
@@ -82,22 +83,28 @@ const ConnectDB: React.FC = () => {
      * @param listKey 触发事件card的索引
      */
     function onConnClickEvent(cardItem: DBListCardProps, listKey: string) {
+        // alert(JSON.stringify(cardItem))
+        // alert(JSON.stringify(listKey))
         const connDBList = context.state.dbList;
         setSpinning(true)
         setSpinningTips('正在连接中。。。')
+        console.log(connDBList)
         const checkHasConnIndex = connDBList.findIndex((connDBItem) => { return connDBItem.listKey === listKey })
         // 不存在连接句柄，创建连接
         if (checkHasConnIndex === -1) {
+            console.log("不存在连接句柄，创建连接")
             connectDBRequest(cardItem, listKey, 'add')
         } else {
             let connectId = connDBList[checkHasConnIndex].connectId
             pingDBRequest(connectId, () => {
                 // 存在连接，并且并未失活，直接复用进入连接
+                console.log("存在连接，并且并未失活，直接复用进入连接")
                 setTimeout(() => {
                     navigate('/dbhome', { state: { connectId, ...cardItem } })
                     setSpinning(false)
                 }, 1500)
             }, () => {
+                console.log("存在连接，已经失活，更新并创建新连接")
                 // 存在连接，已经失活，更新并创建新连接
                 connectDBRequest(cardItem, listKey, 'update')
             })
@@ -263,6 +270,7 @@ const ConnectDB: React.FC = () => {
                     {
                         dbList.map((item, index) => {
                             let DBListCardKey = "dblistcard_" + index.toString()
+                            // cardKey++;
                             return <DBListCard
                                 key={DBListCardKey}
                                 cardConfig={item}

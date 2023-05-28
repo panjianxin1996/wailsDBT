@@ -793,17 +793,60 @@ const ShowDBTable = forwardRef<DBTable.ShowDBTableRef, DBTable.Props>((props, re
      * @returns void
      */
     function deleteTableData(tableHandle: DBTable.tableObject, delIndex: number): void {
-        const { tableObjectArray, activeTableKey } = state
-        const { tableDataSource, tableData } = tableHandle
-        const newTableDataSource = tableDataSource.filter((item, index) => index !== delIndex)
-        const newTableData = tableData.filter((item, index) => index !== delIndex)
-        const newTableObjectArray = tableObjectArray.map(item => item.key === activeTableKey ? { ...item, tableDataSource: newTableDataSource, tableData: newTableData, activeRowIndex: [] } : item)
-        setState({
-            type: 'updateTableObjectData',
-            payload: {
-                tableObjectArray: newTableObjectArray
-            }
+        let needUpdateKey = state.activeTableKey
+        // 查询出制定key的表对象数组中数据
+        let updateStackKeyHandle = state.tableObjectArray.find(item => {
+            return item.key === needUpdateKey
         })
+        // 创建指令请求对象
+        let reqData: RequestGo.RequestGoData[] = [
+            {
+                operType: operationTypes.DB_OPERATION,
+                connDBId,
+                data: {
+                    type: dbOperationTypes.CUSTOM_SQL,
+                    customSQL: updateStackKeyHandle?.QuerySQL
+                }
+            },
+        ]
+        requestGoCommon(reqData).then(responseList => {
+            const tableResData = responseList[0].dataList
+            // 给数据指定key值
+            const tableData = tableResData.map((item: any, index: number) => {
+                return { ...item, __key__: index }
+            })
+            // 修改合并数据
+            const renewtableObjectArray = state.tableObjectArray.map(item => {
+                if (item.key === needUpdateKey) {
+                    return {
+                        ...item,
+                        tableDataSource: tableResData,
+                        tableData,
+                        activeRowIndex: []
+                    }
+                } else {
+                    return item;
+                }
+            })
+            // 更新数据
+            setState({
+                type: 'updateTableObjectData',
+                payload: {
+                    tableObjectArray: renewtableObjectArray
+                }
+            })
+        })
+        // const { tableObjectArray, activeTableKey } = state
+        // const { tableDataSource, tableData } = tableHandle
+        // const newTableDataSource = tableDataSource.filter((item, index) => index !== delIndex)
+        // const newTableData = tableData.filter((item, index) => index !== delIndex)
+        // const newTableObjectArray = tableObjectArray.map(item => item.key === activeTableKey ? { ...item, tableDataSource: newTableDataSource, tableData: newTableData, activeRowIndex: [] } : item)
+        // setState({
+        //     type: 'updateTableObjectData',
+        //     payload: {
+        //         tableObjectArray: newTableObjectArray
+        //     }
+        // })
     }
 
     /**
